@@ -49,7 +49,7 @@ export default function App() {
   const [viewMode, setViewMode] = useState<ViewMode>("earth");
   const [frameMode, setFrameMode] = useState<FrameMode>("geo");
   const [scaleMode, setScaleMode] = useState<ScaleMode>("learning");
-  const [exaggeration, setExaggeration] = useState(0.12);
+  const [exaggeration, setExaggeration] = useState(0.18);
   const [locationMessage, setLocationMessage] = useState("");
   const [tideOptions, setTideOptions] = useState<TideOptions>({
     moonEnabled: true,
@@ -511,13 +511,13 @@ export default function App() {
 
             <label className="field">
               <span>
-                조석 팽대부 강조
+                조석 팽대부 시각 강조
                 <strong>{Math.round(exaggeration * 1000)}×</strong>
               </span>
               <input
                 type="range"
                 min="0.04"
-                max="0.2"
+                max="0.3"
                 step="0.01"
                 value={exaggeration}
                 onChange={(event) =>

@@ -124,12 +124,13 @@ const fragmentShader = `
   void main() {
     float light = max(dot(normalize(vNormalWorld), normalize(uSunDirection)), 0.0);
     float fresnel = pow(1.0 - abs(dot(normalize(vNormalWorld), vec3(0.0, 0.0, 1.0))), 2.0);
-    vec3 lowColor = vec3(0.015, 0.25, 0.34);
-    vec3 highColor = vec3(0.07, 0.78, 0.88);
-    vec3 color = mix(lowColor, highColor, clamp(vTide + 0.35, 0.0, 1.0));
-    color *= 0.42 + light * 0.58;
-    color += fresnel * vec3(0.08, 0.38, 0.48);
-    gl_FragColor = vec4(color, 0.72);
+    vec3 lowColor = vec3(0.01, 0.18, 0.25);
+    vec3 highColor = vec3(0.08, 0.86, 0.96);
+    float tideContrast = smoothstep(-0.35, 0.72, vTide);
+    vec3 color = mix(lowColor, highColor, tideContrast);
+    color *= 0.46 + light * 0.54;
+    color += fresnel * vec3(0.1, 0.48, 0.58);
+    gl_FragColor = vec4(color, 0.84);
   }
 `;
 

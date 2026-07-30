@@ -54,7 +54,7 @@
       <div id="scene">
         <img class="corner-logo" src="../imgs/Coding101-Logo4.png" alt="Coding101">
         <div class="overlay place"><small>관측 지점</small><strong id="placeName">제주</strong><span id="placeCoords">33.50°, 126.53°</span></div>
-        <div class="overlay scale">조석 변형 120× 시각 강조</div>
+        <div class="overlay scale">조석 변형 180× 시각 강조</div>
         <div class="overlay direct-hint" id="directHint"><b>직접 조작</b><span>☀ 태양 · ● 달을 드래그</span></div>
         <div class="overlay orbit-note" id="orbitNote"><strong>태양은 계절에 따라 ±23.4°, 달은 약 ±5.1° 기울어져 보여요.</strong><span>궤도선은 위치를 비교하기 위한 수평 가이드입니다.</span></div>
         <div class="overlay distance-label" id="distanceLabel">1 AU · 약 1억 5천만 km</div>
@@ -115,7 +115,7 @@
         <div class="section-title"><b>02</b><strong>조석 조건</strong></div>
         <div class="toggles"><button id="moonToggle" class="on">달 영향 1.00</button><button id="sunToggle" class="on">태양 영향 0.46</button></div>
         <div class="phases"><button data-phase="0" class="on">삭·망 / 사리</button><button data-phase=".125">중간</button><button data-phase=".25">상·하현 / 조금</button></div>
-        <label class="field"><span>조석 팽대부 강조</span><input id="bulge" type="range" min=".04" max=".2" step=".01" value=".12"></label>
+        <label class="field"><span>조석 팽대부 시각 강조</span><input id="bulge" type="range" min=".04" max=".3" step=".01" value=".18"></label>
       </section>
     </aside>
   </section>
@@ -138,7 +138,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 const $=id=>document.getElementById(id), TAU=Math.PI*2, DEG=Math.PI/180, lunarDay=24+50/60;
-const state={hour:5.75,playing:true,speed:1,lat:33.4996,lon:126.5312,name:"제주",date:"",moon:true,sun:true,phase:0,sunOffset:0,moonOffset:0,todayMode:false,todayEpoch:0,bulge:.12,frame:"geo",scaleMode:"learning",scaleFocus:"overview"};
+const state={hour:5.75,playing:true,speed:1,lat:33.4996,lon:126.5312,name:"제주",date:"",moon:true,sun:true,phase:0,sunOffset:0,moonOffset:0,todayMode:false,todayEpoch:0,bulge:.18,frame:"geo",scaleMode:"learning",scaleFocus:"overview"};
 const pad=n=>String(n).padStart(2,"0"), fmt=h=>{h=(h%24+24)%24;const m=Math.round(h*60);return `${pad(Math.floor(m/60)%24)}:${pad(m%60)}`};
 const vec=(lat,lon)=>new THREE.Vector3(Math.cos(lat*DEG)*Math.cos(lon*DEG),Math.sin(lat*DEG),Math.cos(lat*DEG)*Math.sin(lon*DEG));
 const dayOfYear=d=>{const x=new Date(d+"T12:00:00Z"),s=new Date(Date.UTC(x.getUTCFullYear(),0,0));return Math.floor((x-s)/86400000)};
@@ -163,7 +163,7 @@ const earthSystem=new THREE.Group();scene.add(earthSystem);
 const earth=new THREE.Mesh(new THREE.SphereGeometry(1,72,48),new THREE.MeshStandardMaterial({color:0x315866,emissive:0x0b2028,emissiveIntensity:.58,roughness:.82}));earthSystem.add(earth);
 const grid=new THREE.Mesh(new THREE.SphereGeometry(1.012,32,20),new THREE.MeshBasicMaterial({color:0xb7c9cc,wireframe:true,transparent:true,opacity:.13}));earthSystem.add(grid);
 const atmosphere=new THREE.Mesh(new THREE.SphereGeometry(1.15,48,32),new THREE.MeshBasicMaterial({color:0x4fd8ea,transparent:true,opacity:.07,side:THREE.BackSide}));earthSystem.add(atmosphere);
-const oceanGeo=new THREE.SphereGeometry(1.035,96,64),base=oceanGeo.attributes.position.array.slice(),oceanMat=new THREE.MeshPhysicalMaterial({color:0x238fa0,emissive:0x082d35,emissiveIntensity:.42,transparent:true,opacity:.72,roughness:.25,metalness:.1,clearcoat:.5,side:THREE.DoubleSide});
+const oceanGeo=new THREE.SphereGeometry(1.035,96,64),base=oceanGeo.attributes.position.array.slice(),oceanMat=new THREE.MeshPhysicalMaterial({color:0x2aa8ba,emissive:0x0a3c47,emissiveIntensity:.58,transparent:true,opacity:.84,roughness:.2,metalness:.08,clearcoat:.8,clearcoatRoughness:.18,side:THREE.DoubleSide});
 const ocean=new THREE.Mesh(oceanGeo,oceanMat);earthSystem.add(ocean);
 const moon=new THREE.Mesh(new THREE.SphereGeometry(.22,32,24),new THREE.MeshStandardMaterial({color:0xd5d6cf,roughness:.92}));scene.add(moon);
 const sun=new THREE.Mesh(new THREE.SphereGeometry(.5,32,24),new THREE.MeshBasicMaterial({color:0xffd26a}));scene.add(sun);
