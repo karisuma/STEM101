@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import DayTimeline from "./components/DayTimeline";
 import TideScene, {
   type FrameMode,
@@ -89,7 +95,7 @@ export default function App() {
     () => latLonToVector(location.latitude, location.longitude),
     [location],
   );
-  const { sunDirection } = useMemo(
+  const { sunDirection, moonDirection } = useMemo(
     () =>
       getCelestialDirections(
         hour,
@@ -101,6 +107,34 @@ export default function App() {
   );
   const daylight = getDaylight(observer, sunDirection);
   const trend = getTideTrend(hour, location, date, tideOptions);
+  const celestialDot = Math.min(
+    1,
+    Math.abs(
+      sunDirection[0] * moonDirection[0] +
+        sunDirection[1] * moonDirection[1] +
+        sunDirection[2] * moonDirection[2],
+    ),
+  );
+  const celestialSeparation = Math.acos(celestialDot);
+  const moonForce = tideOptions.moonEnabled ? 1 : 0;
+  const sunForce = tideOptions.sunEnabled ? 0.46 : 0;
+  const combinedTideForce = Math.sqrt(
+    moonForce ** 2 +
+      sunForce ** 2 +
+      2 * moonForce * sunForce * Math.cos(2 * celestialSeparation),
+  );
+  const forceDetail =
+    moonForce === 0 && sunForce === 0
+      ? "조석 영향 꺼짐"
+      : moonForce === 0
+        ? "태양 조석력만 적용"
+        : sunForce === 0
+          ? "달 조석력만 적용"
+          : celestialSeparation < Math.PI / 10
+            ? "같은 축에서 더해짐"
+            : celestialSeparation > (Math.PI * 2) / 5
+              ? "서로 다른 축에서 상쇄"
+              : "두 방향의 조석력 합성";
   const phase =
     phaseOptions.find((option) => option.value === tideOptions.moonPhase) ??
     phaseOptions[0];
@@ -484,6 +518,52 @@ export default function App() {
                 태양의 영향
               </label>
               <span className="force-value">0.46</span>
+            </div>
+
+            <div className="force-compare" aria-label="달과 태양의 힘 비교">
+              <div className="force-compare-head">
+                <strong>중력 vs 조석력</strong>
+                <span>달 = 1 기준</span>
+              </div>
+              <div className="force-compare-row">
+                <span>지구 전체를 당기는 중력</span>
+                <div className="force-bars">
+                  <div className="force-bar">
+                    <span>달</span>
+                    <i style={{ "--value": "1%" } as CSSProperties} />
+                    <b>1</b>
+                  </div>
+                  <div className="force-bar sun">
+                    <span>태양</span>
+                    <i style={{ "--value": "100%" } as CSSProperties} />
+                    <b>177</b>
+                  </div>
+                </div>
+              </div>
+              <div className="force-compare-row">
+                <span>조석을 만드는 힘의 차이</span>
+                <div className="force-bars">
+                  <div className="force-bar">
+                    <span>달</span>
+                    <i style={{ "--value": "100%" } as CSSProperties} />
+                    <b>1.00</b>
+                  </div>
+                  <div className="force-bar sun">
+                    <span>태양</span>
+                    <i style={{ "--value": "46%" } as CSSProperties} />
+                    <b>0.46</b>
+                  </div>
+                </div>
+              </div>
+              <div className="current-force">
+                <span>현재 배치의 상대 조석 효과</span>
+                <small>{forceDetail}</small>
+                <strong>{combinedTideForce.toFixed(2)}</strong>
+              </div>
+              <p className="force-note">
+                중력은 거리², 조석력은 거리³에 반비례해요. 태양의 중력은
+                더 세지만, 조석은 가까운 달의 영향이 약 2.2배 큽니다.
+              </p>
             </div>
 
             <div className="field">
