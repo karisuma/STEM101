@@ -77,7 +77,7 @@
         <div class="object-label sun" id="sunLabel">태양<span>잡아서 이동</span></div>
         <div class="object-label earth" id="earthLabel">지구<span>태양 주위 공전</span></div>
         <div class="object-label moon" id="moonLabel">달<span>잡아서 이동</span></div>
-        <div class="object-label avatar" id="avatarLabel">나<span>지구 위에서 이동</span></div>
+        <div class="object-label avatar" id="avatarLabel">제주<span>지구 자전으로 이동</span></div>
       </div>
       <div class="causal-flow" aria-label="조석 원인과 결과">
         <div class="cause-card active"><small>1 · 천체 배치</small><strong id="alignmentResult">일렬에 가까움</strong></div>
@@ -159,10 +159,10 @@ const host=$("scene"),renderer=new THREE.WebGLRenderer({antialias:true}),scene=n
 renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));renderer.setClearColor(0x07131b);host.prepend(renderer.domElement);renderer.domElement.style.touchAction="none";camera.position.set(0,6.4,10.8);
 const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.enablePan=false;controls.minDistance=2.8;controls.maxDistance=14;
 scene.add(new THREE.AmbientLight(0xb8d0d5,.62));scene.add(new THREE.HemisphereLight(0x91bbc5,0x18252c,.72));const light=new THREE.DirectionalLight(0xfff1c1,2.65);scene.add(light);
-const earthSystem=new THREE.Group();scene.add(earthSystem);
-const earth=new THREE.Mesh(new THREE.SphereGeometry(1,72,48),new THREE.MeshStandardMaterial({color:0x315866,emissive:0x0b2028,emissiveIntensity:.58,roughness:.82}));earthSystem.add(earth);
-const grid=new THREE.Mesh(new THREE.SphereGeometry(1.012,32,20),new THREE.MeshBasicMaterial({color:0xb7c9cc,wireframe:true,transparent:true,opacity:.13}));earthSystem.add(grid);
-const atmosphere=new THREE.Mesh(new THREE.SphereGeometry(1.15,48,32),new THREE.MeshBasicMaterial({color:0x4fd8ea,transparent:true,opacity:.07,side:THREE.BackSide}));earthSystem.add(atmosphere);
+const earthSystem=new THREE.Group(),earthSurface=new THREE.Group();scene.add(earthSystem);earthSystem.add(earthSurface);
+const earth=new THREE.Mesh(new THREE.SphereGeometry(1,72,48),new THREE.MeshStandardMaterial({color:0x315866,emissive:0x0b2028,emissiveIntensity:.58,roughness:.82}));earthSurface.add(earth);
+const grid=new THREE.Mesh(new THREE.SphereGeometry(1.012,32,20),new THREE.MeshBasicMaterial({color:0xb7c9cc,wireframe:true,transparent:true,opacity:.13}));earthSurface.add(grid);
+const atmosphere=new THREE.Mesh(new THREE.SphereGeometry(1.15,48,32),new THREE.MeshBasicMaterial({color:0x4fd8ea,transparent:true,opacity:.07,side:THREE.BackSide}));earthSurface.add(atmosphere);
 const oceanGeo=new THREE.SphereGeometry(1.035,96,64),base=oceanGeo.attributes.position.array.slice(),oceanMat=new THREE.MeshPhysicalMaterial({color:0x2aa8ba,emissive:0x0a3c47,emissiveIntensity:.58,transparent:true,opacity:.84,roughness:.2,metalness:.08,clearcoat:.8,clearcoatRoughness:.18,side:THREE.DoubleSide});
 const ocean=new THREE.Mesh(oceanGeo,oceanMat);earthSystem.add(ocean);
 const moon=new THREE.Mesh(new THREE.SphereGeometry(.22,32,24),new THREE.MeshStandardMaterial({color:0xd5d6cf,roughness:.92}));scene.add(moon);
@@ -174,7 +174,7 @@ const avatarHead=new THREE.Mesh(new THREE.SphereGeometry(.042,16,12),new THREE.M
 avatarHead.position.y=.145;
 const markerHit=new THREE.Mesh(new THREE.SphereGeometry(.12,12,10),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));
 markerHit.position.y=.075;
-avatar.add(avatarBody,avatarHead,markerHit);earthSystem.add(avatar);
+avatar.add(avatarBody,avatarHead,markerHit);earthSurface.add(avatar);
 function orbitRing(radius,color){const points=[];for(let i=0;i<128;i++){const a=i/128*TAU;points.push(new THREE.Vector3(Math.cos(a)*radius,0,Math.sin(a)*radius))}const geometry=new THREE.BufferGeometry().setFromPoints(points),material=new THREE.LineBasicMaterial({color,transparent:true,opacity:.3}),ring=new THREE.LineLoop(geometry,material);scene.add(ring);return ring}
 const moonGuide=orbitRing(4.2,0x82959b),sunGuide=orbitRing(8,0x5d7077);
 const distanceGeometry=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-6,0,0),new THREE.Vector3(6,0,0)]),distanceRuler=new THREE.Line(distanceGeometry,new THREE.LineBasicMaterial({color:0x91a4aa,transparent:true,opacity:.75}));distanceRuler.visible=false;scene.add(distanceRuler);
@@ -196,11 +196,12 @@ function drawChart(){const s=[];for(let h=0;h<=26;h+=.25)s.push(sample(h));let h
 function layoutScene(d){
  const surfaceMode=currentView==="earth",learning=state.scaleMode==="learning",geo=state.frame==="geo"||surfaceMode;
  earthSystem.visible=sun.visible=moon.visible=true;earthLocator.visible=moonLocator.visible=false;distanceRuler.visible=false;
+ earthSurface.rotation.y=!surfaceMode&&learning&&!geo?-state.hour/24*TAU:0;avatar.scale.setScalar(!surfaceMode&&learning&&!geo?1.65:1);
  if(surfaceMode||learning&&geo){
   earthSystem.position.set(0,0,0);earthSystem.scale.setScalar(1);sun.position.copy(d.sun).multiplyScalar(8);sun.scale.setScalar(1);moon.position.copy(d.moon).multiplyScalar(4.2);moon.scale.setScalar(1);sunGuide.position.set(0,0,0);sunGuide.scale.setScalar(1);moonGuide.position.set(0,0,0);moonGuide.scale.setScalar(1);sunGuide.visible=moonGuide.visible=!surfaceMode;avatar.visible=true
  }else if(learning){
   const day=dayOfYear(state.date),angle=TAU*(day/365.24-.22),earthPosition=new THREE.Vector3(Math.cos(angle)*7.2,0,Math.sin(angle)*7.2),moonDirection=new THREE.Vector3(d.moon.x,0,d.moon.z).normalize();
-  sun.position.set(0,0,0);sun.scale.setScalar(1.7);earthSystem.position.copy(earthPosition);earthSystem.scale.setScalar(.42);moon.position.copy(earthPosition).addScaledVector(moonDirection,.78);moon.scale.setScalar(.55);sunGuide.position.set(0,0,0);sunGuide.scale.setScalar(.9);moonGuide.position.copy(earthPosition);moonGuide.scale.setScalar(.78/4.2);sunGuide.visible=moonGuide.visible=true;avatar.visible=false
+  sun.position.set(0,0,0);sun.scale.setScalar(1.7);earthSystem.position.copy(earthPosition);earthSystem.scale.setScalar(.42);moon.position.copy(earthPosition).addScaledVector(moonDirection,.78);moon.scale.setScalar(.55);sunGuide.position.set(0,0,0);sunGuide.scale.setScalar(.9);moonGuide.position.copy(earthPosition);moonGuide.scale.setScalar(.78/4.2);sunGuide.visible=moonGuide.visible=true;avatar.visible=true
  }else if(geo){
   earthSystem.position.set(-3,0,0);earthSystem.scale.setScalar(.1);moon.position.set(3,0,0);moon.scale.setScalar(.123);sun.visible=false;sunGuide.visible=moonGuide.visible=false;distanceRuler.visible=true;distanceRuler.scale.set(.5,1,1);earthLocator.position.copy(earthSystem.position);moonLocator.position.copy(moon.position);earthLocator.visible=moonLocator.visible=true;avatar.visible=false
  }else{
@@ -213,7 +214,7 @@ function update(){const q=sample(state.hour),before=sample(state.hour-.04).tide,
  $("time").textContent=$("statusTime").textContent=fmt(state.hour);$("timeRange").value=state.hour;$("level").textContent=levelText;$("meter").style.width=pct+"%";$("trend").textContent=trendText;$("dayLabel").textContent=day;$("sunState").style.background=day==="낮"?"#f1c969":day==="박명"?"#ff7557":"#0d1921";$("alignmentResult").textContent=alignment;$("bulgeResult").textContent=rangeText;$("localResult").textContent=`${levelText} · ${trendText}`;
  layoutScene(d)}
 function positionObjectLabel(id,object,visible){const label=$(id);if(!visible){label.style.display="none";return}const projected=object.getWorldPosition(new THREE.Vector3()).project(camera),inside=projected.z>-1&&projected.z<1&&Math.abs(projected.x)<1.08&&Math.abs(projected.y)<1.08;if(!inside){label.style.display="none";return}label.style.display="grid";label.style.left=`${(projected.x*.5+.5)*host.clientWidth}px`;label.style.top=`${(-projected.y*.5+.5)*host.clientHeight-28}px`}
-function render(){controls.update();earthLocator.quaternion.copy(camera.quaternion);moonLocator.quaternion.copy(camera.quaternion);renderer.render(scene,camera);const systemMode=currentView==="system";positionObjectLabel("sunLabel",sun,systemMode&&(state.scaleMode==="learning"||state.frame==="helio"));positionObjectLabel("earthLabel",earthSystem,systemMode&&state.frame==="helio");positionObjectLabel("moonLabel",moon,systemMode&&state.scaleMode==="learning");positionObjectLabel("avatarLabel",avatar,currentView==="earth")}
+function render(){controls.update();earthLocator.quaternion.copy(camera.quaternion);moonLocator.quaternion.copy(camera.quaternion);renderer.render(scene,camera);const systemMode=currentView==="system",rotatingLocation=systemMode&&state.frame==="helio"&&state.scaleMode==="learning";positionObjectLabel("sunLabel",sun,systemMode&&(state.scaleMode==="learning"||state.frame==="helio"));positionObjectLabel("earthLabel",earthSystem,systemMode&&state.frame==="helio"&&!rotatingLocation);positionObjectLabel("moonLabel",moon,systemMode&&state.scaleMode==="learning");positionObjectLabel("avatarLabel",avatar,currentView==="earth"||rotatingLocation)}
 let last=performance.now(),chartClock=0;function loop(now){const dt=Math.min((now-last)/1000,.1);last=now;if(state.playing)state.hour=(state.hour+dt*state.speed)%24;update();render();chartClock+=dt;if(chartClock>.18){drawChart();chartClock=0}requestAnimationFrame(loop)}requestAnimationFrame(loop);
 
 const now=new Date(),localDate=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;state.date=localDate;$("date").value=localDate;
@@ -222,7 +223,7 @@ $("todayButton").onclick=applyToday;
 $("play").onclick=()=>{state.playing=!state.playing;$("play").textContent=state.playing?"Ⅱ":"▶"};
 $("timeRange").oninput=e=>{state.hour=+e.target.value;state.playing=false;$("play").textContent="▶";drawChart()};$("speed").onchange=e=>state.speed=+e.target.value;
 $("location").onchange=e=>{const [lat,lon,name]=e.target.value.split(",");state.lat=+lat;state.lon=+lon;state.name=name;$("lat").value=lat;$("lon").value=lon;syncPlace()};
-function syncPlace(){$("placeName").textContent=$("chartPlace").textContent=state.name;$("placeCoords").textContent=`${state.lat.toFixed(2)}°, ${state.lon.toFixed(2)}°`;drawChart()}
+function syncPlace(){$("placeName").textContent=$("chartPlace").textContent=state.name;$("placeCoords").textContent=`${state.lat.toFixed(2)}°, ${state.lon.toFixed(2)}°`;$("avatarLabel").innerHTML=`${state.name}<span>지구 자전으로 이동</span>`;drawChart()}
 $("lat").onchange=e=>{state.lat=Math.max(-90,Math.min(90,+e.target.value));state.name="사용자 지정";syncPlace()};$("lon").onchange=e=>{state.lon=Math.max(-180,Math.min(180,+e.target.value));state.name="사용자 지정";syncPlace()};$("date").onchange=e=>{if(e.target.value){state.date=e.target.value;state.todayMode=false;$("todayButton").classList.remove("active");$("todayButton").textContent="오늘의 해·달";drawChart()}};
 $("geo").onclick=()=>navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>{state.lat=p.coords.latitude;state.lon=p.coords.longitude;state.name="내 위치";$("lat").value=state.lat.toFixed(4);$("lon").value=state.lon.toFixed(4);syncPlace()},()=>alert("위치 권한을 사용할 수 없습니다.")):alert("위치 기능을 지원하지 않는 브라우저입니다.");
 $("moonToggle").onclick=e=>{state.moon=!state.moon;e.currentTarget.classList.toggle("on",state.moon);drawChart()};$("sunToggle").onclick=e=>{state.sun=!state.sun;e.currentTarget.classList.toggle("on",state.sun);drawChart()};

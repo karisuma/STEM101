@@ -188,7 +188,13 @@ function TideOcean({
   );
 }
 
-function LocationMarker({ location }: { location: Location }) {
+function LocationMarker({
+  location,
+  emphasized,
+}: {
+  location: Location;
+  emphasized: boolean;
+}) {
   const position = useMemo(
     () =>
       toVector3(
@@ -201,10 +207,14 @@ function LocationMarker({ location }: { location: Location }) {
   return (
     <group position={position}>
       <mesh>
-        <sphereGeometry args={[0.035, 20, 20]} />
+        <sphereGeometry args={[emphasized ? 0.06 : 0.035, 20, 20]} />
         <meshBasicMaterial color="#ff7557" />
       </mesh>
-      <pointLight color="#ff7557" intensity={0.7} distance={0.7} />
+      <pointLight
+        color="#ff7557"
+        intensity={emphasized ? 1.2 : 0.7}
+        distance={emphasized ? 1.1 : 0.7}
+      />
     </group>
   );
 }
@@ -215,33 +225,58 @@ function Earth({
   location,
   tideOptions,
   exaggeration,
+  surfaceRotation,
+  emphasizeLocation,
 }: {
   moonDirection: Vec3;
   sunDirection: Vec3;
   location: Location;
   tideOptions: TideOptions;
   exaggeration: number;
+  surfaceRotation: number;
+  emphasizeLocation: boolean;
 }) {
   return (
     <group>
-      <mesh>
-        <sphereGeometry args={[1, 96, 64]} />
-        <meshStandardMaterial
-          color="#0b3445"
-          roughness={0.82}
-          metalness={0.05}
-        />
-      </mesh>
+      <group rotation={[0, surfaceRotation, 0]}>
+        <mesh>
+          <sphereGeometry args={[1, 96, 64]} />
+          <meshStandardMaterial
+            color="#0b3445"
+            roughness={0.82}
+            metalness={0.05}
+          />
+        </mesh>
 
-      <mesh scale={1.015}>
-        <sphereGeometry args={[1, 48, 32]} />
-        <meshBasicMaterial
-          color="#90aeb4"
-          wireframe
+        <mesh scale={1.015}>
+          <sphereGeometry args={[1, 48, 32]} />
+          <meshBasicMaterial
+            color="#90aeb4"
+            wireframe
+            transparent
+            opacity={0.07}
+          />
+        </mesh>
+
+        <mesh scale={1.16}>
+          <sphereGeometry args={[1, 64, 48]} />
+          <meshBasicMaterial
+            color="#4fd8ea"
+            transparent
+            opacity={0.08}
+            side={BackSide}
+          />
+        </mesh>
+
+        <Line
+          points={orbitPoints(1.065)}
+          color="#7d9ba4"
           transparent
-          opacity={0.07}
+          opacity={0.28}
+          lineWidth={0.7}
         />
-      </mesh>
+        <LocationMarker location={location} emphasized={emphasizeLocation} />
+      </group>
 
       <TideOcean
         moonDirection={moonDirection}
@@ -250,24 +285,6 @@ function Earth({
         exaggeration={exaggeration}
       />
 
-      <mesh scale={1.16}>
-        <sphereGeometry args={[1, 64, 48]} />
-        <meshBasicMaterial
-          color="#4fd8ea"
-          transparent
-          opacity={0.08}
-          side={BackSide}
-        />
-      </mesh>
-
-      <Line
-        points={orbitPoints(1.065)}
-        color="#7d9ba4"
-        transparent
-        opacity={0.28}
-        lineWidth={0.7}
-      />
-      <LocationMarker location={location} />
     </group>
   );
 }
@@ -291,6 +308,8 @@ function SceneContent({
   const surfaceMode = viewMode === "earth";
   const learning = scaleMode === "learning";
   const geo = frameMode === "geo" || surfaceMode;
+  const rotatingLocation = !surfaceMode && learning && !geo;
+  const surfaceRotation = rotatingLocation ? -(hour / 24) * Math.PI * 2 : 0;
   const dayOfYear = Math.floor(
     (Date.parse(`${date}T12:00:00Z`) -
       Date.UTC(new Date(`${date}T12:00:00Z`).getUTCFullYear(), 0, 0)) /
@@ -417,6 +436,8 @@ function SceneContent({
           location={location}
           tideOptions={tideOptions}
           exaggeration={exaggeration}
+          surfaceRotation={surfaceRotation}
+          emphasizeLocation={rotatingLocation}
         />
       </group>
       {scaleMode === "actual" && (
