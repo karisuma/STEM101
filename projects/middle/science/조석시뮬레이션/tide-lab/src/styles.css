@@ -340,6 +340,54 @@ select:focus-visible {
   font: 12px Consolas, monospace;
 }
 
+.scale-navigator-react {
+  top: 14px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px;
+  border: 1px solid rgba(183, 210, 215, 0.22);
+  background: rgba(7, 16, 24, 0.95);
+  transform: translateX(-50%);
+  white-space: nowrap;
+  pointer-events: auto;
+}
+
+.scale-navigator-react > span {
+  padding: 0 7px;
+  color: #82969b;
+  font-size: 8px;
+}
+
+.scale-navigator-react button {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  background: #0c1920;
+  color: #82969b;
+  font-size: 9px;
+}
+
+.scale-navigator-react button.active {
+  border-color: rgba(83, 214, 223, 0.46);
+  background: #133e47;
+  color: var(--cyan);
+}
+
+.scale-navigator-react small {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  min-width: 260px;
+  padding: 5px 9px;
+  background: rgba(7, 16, 24, 0.8);
+  color: #a7b8bc;
+  text-align: center;
+  font: 8px Consolas, monospace;
+  transform: translateX(-50%);
+}
+
 .actual-scale-panel {
   right: 18px;
   bottom: 18px;
@@ -1232,6 +1280,22 @@ input[type="number"] {
 
   .actual-scale-panel {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .scale-navigator-react {
+    right: 10px;
+    left: 10px;
+    justify-content: center;
+    transform: none;
+  }
+
+  .scale-navigator-react > span {
+    display: none;
+  }
+
+  .scale-navigator-react button {
+    flex: 1;
+    padding: 0 3px;
   }
 
   .actual-scale-panel > div:nth-child(2) {

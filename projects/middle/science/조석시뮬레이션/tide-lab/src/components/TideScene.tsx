@@ -19,6 +19,7 @@ import {
 type ViewMode = "earth" | "system";
 export type FrameMode = "geo" | "helio";
 export type ScaleMode = "learning" | "actual";
+export type ScaleFocus = "overview" | "sun" | "earthmoon" | "sizes";
 
 type TideSceneProps = {
   hour: number;
@@ -29,6 +30,7 @@ type TideSceneProps = {
   viewMode: ViewMode;
   frameMode: FrameMode;
   scaleMode: ScaleMode;
+  scaleFocus: ScaleFocus;
 };
 
 const toVector3 = (value: Vec3, length = 1) =>
@@ -48,38 +50,79 @@ function CameraRig({
   viewMode,
   frameMode,
   scaleMode,
+  scaleFocus,
 }: {
   viewMode: ViewMode;
   frameMode: FrameMode;
   scaleMode: ScaleMode;
+  scaleFocus: ScaleFocus;
 }) {
   const { camera } = useThree();
-  const target = useMemo(
+  const cameraPreset = useMemo(
     () => {
-      if (viewMode === "earth") return new Vector3(0.2, 1.2, 4.6);
-      if (scaleMode === "actual") {
-        return frameMode === "helio"
-          ? new Vector3(0, 2, 16)
-          : new Vector3(0, 2.4, 8.5);
+      if (viewMode === "earth") {
+        return {
+          position: new Vector3(0.2, 1.2, 4.6),
+          lookAt: new Vector3(),
+          near: 0.1,
+        };
       }
-      return frameMode === "helio"
-        ? new Vector3(0, 8.8, 13)
-        : new Vector3(0, 6.4, 10.8);
+      if (scaleMode === "actual") {
+        if (frameMode === "helio") {
+          if (scaleFocus === "sun") {
+            return {
+              position: new Vector3(-6, 0.12, 0.24),
+              lookAt: new Vector3(-6, 0, 0),
+              near: 0.001,
+            };
+          }
+          if (scaleFocus === "earthmoon") {
+            return {
+              position: new Vector3(6.0154, 0.04, 0.08),
+              lookAt: new Vector3(6.0154, 0, 0),
+              near: 0.0001,
+            };
+          }
+          return {
+            position: new Vector3(0, 2, 16),
+            lookAt: new Vector3(),
+            near: 0.1,
+          };
+        }
+        return {
+          position: new Vector3(0, 2.4, 8.5),
+          lookAt: new Vector3(),
+          near: 0.1,
+        };
+      }
+      return {
+        position:
+          frameMode === "helio"
+            ? new Vector3(0, 8.8, 13)
+            : new Vector3(0, 6.4, 10.8),
+        lookAt: new Vector3(),
+        near: 0.1,
+      };
     },
-    [frameMode, scaleMode, viewMode],
+    [frameMode, scaleFocus, scaleMode, viewMode],
   );
   const moving = useRef(true);
 
   useEffect(() => {
     moving.current = true;
-  }, [target]);
+    camera.near = cameraPreset.near;
+    camera.updateProjectionMatrix();
+  }, [camera, cameraPreset]);
 
   useFrame((_, delta) => {
     if (!moving.current) return;
-    camera.position.lerp(target, 1 - Math.exp(-delta * 3.6));
-    camera.lookAt(0, 0, 0);
-    if (camera.position.distanceTo(target) < 0.02) {
-      camera.position.copy(target);
+    camera.position.lerp(
+      cameraPreset.position,
+      1 - Math.exp(-delta * 3.6),
+    );
+    camera.lookAt(cameraPreset.lookAt);
+    if (camera.position.distanceTo(cameraPreset.position) < 0.0005) {
+      camera.position.copy(cameraPreset.position);
       moving.current = false;
     }
   });
@@ -298,6 +341,7 @@ function SceneContent({
   viewMode,
   frameMode,
   scaleMode,
+  scaleFocus,
 }: TideSceneProps) {
   const { sunDirection, moonDirection } = getCelestialDirections(
     hour,
@@ -369,6 +413,7 @@ function SceneContent({
         viewMode={viewMode}
         frameMode={frameMode}
         scaleMode={scaleMode}
+        scaleFocus={scaleFocus}
       />
       <color attach="background" args={["#050b11"]} />
       <fog attach="fog" args={["#050b11", 10, 22]} />
@@ -429,6 +474,20 @@ function SceneContent({
         />
       )}
 
+      {scaleMode === "actual" &&
+        frameMode === "helio" &&
+        scaleFocus === "earthmoon" && (
+          <group position={earthPosition}>
+            <Line
+              points={orbitPoints(0.0308)}
+              color="#aab9bd"
+              transparent
+              opacity={0.16}
+              lineWidth={0.7}
+            />
+          </group>
+        )}
+
       <group position={earthPosition} scale={earthScale}>
         <Earth
           moonDirection={moonDirection}
@@ -487,8 +546,37 @@ function SceneContent({
       <OrbitControls
         makeDefault
         enablePan={false}
-        minDistance={2.8}
-        maxDistance={scaleMode === "actual" ? 24 : 16}
+        target={
+          scaleMode === "actual" &&
+          frameMode === "helio" &&
+          scaleFocus === "sun"
+            ? [-6, 0, 0]
+            : scaleMode === "actual" &&
+                frameMode === "helio" &&
+                scaleFocus === "earthmoon"
+              ? [6.0154, 0, 0]
+              : [0, 0, 0]
+        }
+        minDistance={
+          scaleMode === "actual" && frameMode === "helio"
+            ? scaleFocus === "sun"
+              ? 0.12
+              : scaleFocus === "earthmoon"
+                ? 0.045
+                : 5
+            : 2.8
+        }
+        maxDistance={
+          scaleMode === "actual" && frameMode === "helio"
+            ? scaleFocus === "sun"
+              ? 1.5
+              : scaleFocus === "earthmoon"
+                ? 0.5
+                : 24
+            : scaleMode === "actual"
+              ? 24
+              : 16
+        }
         autoRotate={false}
         dampingFactor={0.08}
         enableDamping

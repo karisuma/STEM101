@@ -8,6 +8,7 @@ import {
 import DayTimeline from "./components/DayTimeline";
 import TideScene, {
   type FrameMode,
+  type ScaleFocus,
   type ScaleMode,
 } from "./components/TideScene";
 import {
@@ -46,6 +47,33 @@ const speedOptions = [
   { label: "4시간/초", value: 4 },
 ];
 
+const scaleFocusOptions: Array<{
+  value: ScaleFocus;
+  label: string;
+  readout: string;
+}> = [
+  {
+    value: "overview",
+    label: "전체 1 AU",
+    readout: "태양–지구 전체 거리 · 1 AU ≈ 지구–달 거리 389배",
+  },
+  {
+    value: "sun",
+    label: "태양 가까이",
+    readout: "태양 지름 1,392,700 km · 지구 지름의 약 109배",
+  },
+  {
+    value: "earthmoon",
+    label: "지구·달 거리",
+    readout: "지구–달 384,400 km · 지구 지름 약 30개",
+  },
+  {
+    value: "sizes",
+    label: "크기 비교",
+    readout: "비교창마다 동일 축척 · 태양:지구 109:1 · 지구:달 3.67:1",
+  },
+];
+
 export default function App() {
   const [date, setDate] = useState(today);
   const [location, setLocation] = useState<Location>(LOCATIONS[0]);
@@ -55,6 +83,7 @@ export default function App() {
   const [viewMode, setViewMode] = useState<ViewMode>("earth");
   const [frameMode, setFrameMode] = useState<FrameMode>("geo");
   const [scaleMode, setScaleMode] = useState<ScaleMode>("learning");
+  const [scaleFocus, setScaleFocus] = useState<ScaleFocus>("overview");
   const [exaggeration, setExaggeration] = useState(0.18);
   const [locationMessage, setLocationMessage] = useState("");
   const [tideOptions, setTideOptions] = useState<TideOptions>({
@@ -229,14 +258,20 @@ export default function App() {
                 <div className="mode-segmented" aria-label="천체 관점">
                   <button
                     className={frameMode === "geo" ? "active" : ""}
-                    onClick={() => setFrameMode("geo")}
+                    onClick={() => {
+                      setFrameMode("geo");
+                      setScaleFocus("overview");
+                    }}
                     title="지구를 중심에 둔 관점"
                   >
                     지구 중심
                   </button>
                   <button
                     className={frameMode === "helio" ? "active" : ""}
-                    onClick={() => setFrameMode("helio")}
+                    onClick={() => {
+                      setFrameMode("helio");
+                      setScaleFocus("overview");
+                    }}
                     title="태양을 중심에 둔 지동설 관점"
                   >
                     태양 중심
@@ -248,13 +283,19 @@ export default function App() {
                 <div className="mode-segmented" aria-label="천체 스케일">
                   <button
                     className={scaleMode === "learning" ? "active" : ""}
-                    onClick={() => setScaleMode("learning")}
+                    onClick={() => {
+                      setScaleMode("learning");
+                      setScaleFocus("overview");
+                    }}
                   >
                     학습용
                   </button>
                   <button
                     className={scaleMode === "actual" ? "active" : ""}
-                    onClick={() => setScaleMode("actual")}
+                    onClick={() => {
+                      setScaleMode("actual");
+                      setScaleFocus("overview");
+                    }}
                   >
                     실제 비율
                   </button>
@@ -274,6 +315,7 @@ export default function App() {
               viewMode={viewMode}
               frameMode={frameMode}
               scaleMode={scaleMode}
+              scaleFocus={scaleFocus}
             />
             <div className="scene-overlay scene-location">
               <span className="overlay-label">관측 지점</span>
@@ -300,12 +342,41 @@ export default function App() {
               )}
             {viewMode === "system" && scaleMode === "actual" && (
               <>
-                <div className="scene-overlay actual-distance">
-                  {frameMode === "helio"
-                    ? "1 AU · 약 1억 5천만 km"
-                    : "384,400 km · 지구 약 30개"}
-                </div>
-                <div className="scene-overlay actual-scale-panel">
+                {frameMode === "helio" && (
+                  <div
+                    className="scene-overlay scale-navigator-react"
+                    aria-label="실제 축척 카메라 이동"
+                  >
+                    <span>축척 탐험</span>
+                    {scaleFocusOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        className={scaleFocus === option.value ? "active" : ""}
+                        onClick={() => setScaleFocus(option.value)}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                    <small>
+                      {
+                        scaleFocusOptions.find(
+                          (option) => option.value === scaleFocus,
+                        )?.readout
+                      }
+                    </small>
+                  </div>
+                )}
+                {(frameMode === "geo" || scaleFocus === "overview") && (
+                  <div className="scene-overlay actual-distance">
+                    {frameMode === "helio"
+                      ? "1 AU · 약 1억 5천만 km"
+                      : "384,400 km · 지구 약 30개"}
+                  </div>
+                )}
+                {(frameMode === "geo" ||
+                  scaleFocus === "overview" ||
+                  scaleFocus === "sizes") && (
+                  <div className="scene-overlay actual-scale-panel">
                   <div>
                     <small>태양 지름</small>
                     <strong>139만 km</strong>
@@ -353,7 +424,8 @@ export default function App() {
                     1픽셀보다 작아집니다. 확대창은 각 창 안에서 동일한 실제
                     비율을 유지합니다.
                   </p>
-                </div>
+                  </div>
+                )}
               </>
             )}
           </div>
