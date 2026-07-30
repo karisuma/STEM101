@@ -380,6 +380,110 @@ select:focus-visible {
   border-top: 1px solid var(--line);
 }
 
+.actual-scale-panel > .actual-size-visuals {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 0.7fr 1fr;
+  gap: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+  border-right: 0;
+}
+
+.actual-size-visuals section {
+  min-width: 0;
+  padding: 10px 14px;
+  overflow: hidden;
+}
+
+.actual-size-visuals section + section {
+  border-left: 1px solid var(--line);
+}
+
+.actual-size-visuals h3 {
+  margin: 0 0 2px;
+  font-size: 10px;
+}
+
+.actual-solar-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  height: 74px;
+}
+
+.actual-sun-disk {
+  width: 70px;
+  height: 70px;
+  flex: none;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 36% 34%,
+    #fff1aa 0 8%,
+    #f1c969 28%,
+    #d9932e 100%
+  );
+  box-shadow: 0 0 20px rgba(241, 201, 105, 0.25);
+}
+
+.actual-earth-pixel {
+  width: 0.64px;
+  height: 0.64px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 4px 1px var(--cyan);
+}
+
+.actual-earth-moon-stage {
+  position: relative;
+  height: 74px;
+  overflow: hidden;
+  background: linear-gradient(
+    90deg,
+    rgba(83, 214, 223, 0.03),
+    transparent
+  );
+}
+
+.actual-em-earth {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: 15px;
+  width: 8.6px;
+  height: 8.6px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #82f1ed, #19798a 65%, #0b3445);
+  box-shadow: 0 0 8px rgba(83, 214, 223, 0.4);
+  transform: translate(-50%, -50%);
+}
+
+.actual-em-orbit {
+  position: absolute;
+  top: 50%;
+  left: 15px;
+  width: 520px;
+  height: 520px;
+  border: 1px solid rgba(184, 200, 203, 0.15);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.actual-em-moon {
+  position: absolute;
+  z-index: 3;
+  top: 50%;
+  left: 275px;
+  width: 2.35px;
+  height: 2.35px;
+  border-radius: 50%;
+  background: #f4f1dc;
+  box-shadow: 0 0 5px 2px rgba(244, 241, 220, 0.6);
+  transform: translate(-50%, -50%);
+}
+
 .transport {
   min-height: 76px;
   display: grid;

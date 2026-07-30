@@ -440,7 +440,7 @@ function SceneContent({
           emphasizeLocation={rotatingLocation}
         />
       </group>
-      {scaleMode === "actual" && (
+      {scaleMode === "actual" && frameMode === "geo" && (
         <group position={earthPosition}>
           <mesh>
             <ringGeometry args={[0.11, 0.15, 32]} />
@@ -461,7 +461,7 @@ function SceneContent({
           <meshStandardMaterial color="#d5d6cf" roughness={0.92} />
         </mesh>
       </group>
-      {scaleMode === "actual" && (
+      {scaleMode === "actual" && frameMode === "geo" && (
         <group position={moonPosition}>
           <mesh>
             <ringGeometry args={[0.055, 0.075, 24]} />

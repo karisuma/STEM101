@@ -284,7 +284,7 @@ export default function App() {
             </div>
             <div className="scene-overlay scene-scale">
               {scaleMode === "actual"
-                ? "실제 비율 · 위치 표식 사용"
+                ? "실제 비율 · 동일 축척 확대창"
                 : `조석 변형 ${Math.round(exaggeration * 1000)}× 시각 강조`}
             </div>
             {viewMode === "system" &&
@@ -325,9 +325,33 @@ export default function App() {
                     <strong>384,400 km</strong>
                     <span>지구 약 30개</span>
                   </div>
+                  {frameMode === "helio" && (
+                    <div className="actual-size-visuals">
+                      <section>
+                        <h3>태양–지구 크기 비교</h3>
+                        <small>동일 축척 · 태양 지름 = 지구 109개</small>
+                        <div className="actual-solar-stage">
+                          <i className="actual-sun-disk" />
+                          <i className="actual-earth-pixel" />
+                        </div>
+                        <span>태양 1,392,700 km · 지구 12,756 km</span>
+                      </section>
+                      <section>
+                        <h3>지구–달 계 확대</h3>
+                        <small>동일 축척 · 중심 거리 = 지구 지름 약 30개</small>
+                        <div className="actual-earth-moon-stage">
+                          <i className="actual-em-earth" />
+                          <i className="actual-em-orbit" />
+                          <i className="actual-em-moon" />
+                        </div>
+                        <span>지구 12,756 km · 달 3,475 km</span>
+                      </section>
+                    </div>
+                  )}
                   <p>
-                    실제 거리에서는 지구와 달이 점처럼 보여 위치 표식을
-                    함께 표시합니다.
+                    전체 거리와 천체 크기를 동시에 맞추면 지구·달은
+                    1픽셀보다 작아집니다. 확대창은 각 창 안에서 동일한 실제
+                    비율을 유지합니다.
                   </p>
                 </div>
               </>
