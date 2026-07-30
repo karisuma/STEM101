@@ -19,7 +19,7 @@
 │  └─ middle/
 │     ├─ math/
 │     └─ science/
-│        └─ tide-sim/
+│        └─ 조석시뮬레이션/
 └─ shared/                       # 여러 탐구가 함께 쓰는 코드
 ```
 
