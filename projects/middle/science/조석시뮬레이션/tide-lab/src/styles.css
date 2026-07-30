@@ -1354,6 +1354,35 @@ input[type="number"] {
   }
 }
 
+@media (min-width: 721px) {
+  .mode-segmented button {
+    min-height: 40px;
+    padding-inline: 17px;
+    font-size: 13px;
+  }
+
+  .scale-navigator-react {
+    gap: 7px;
+    padding: 8px;
+  }
+
+  .scale-navigator-react > span {
+    font-size: 11px;
+  }
+
+  .scale-navigator-react button {
+    min-height: 38px;
+    padding-inline: 14px;
+    font-size: 12px;
+  }
+
+  .scale-navigator-react small {
+    min-width: 360px;
+    padding: 7px 10px;
+    font-size: 11px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     scroll-behavior: auto !important;
