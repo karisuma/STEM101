@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import DayTimeline from "./components/DayTimeline";
-import TideScene from "./components/TideScene";
+import TideScene, {
+  type FrameMode,
+  type ScaleMode,
+} from "./components/TideScene";
 import {
   buildDaySamples,
   formatHour,
@@ -44,6 +47,8 @@ export default function App() {
   const [playing, setPlaying] = useState(true);
   const [speed, setSpeed] = useState(1);
   const [viewMode, setViewMode] = useState<ViewMode>("earth");
+  const [frameMode, setFrameMode] = useState<FrameMode>("geo");
+  const [scaleMode, setScaleMode] = useState<ScaleMode>("learning");
   const [exaggeration, setExaggeration] = useState(0.12);
   const [locationMessage, setLocationMessage] = useState("");
   const [tideOptions, setTideOptions] = useState<TideOptions>({
@@ -181,6 +186,47 @@ export default function App() {
                 천체 보기
               </button>
             </div>
+            <div
+              className="celestial-mode-controls"
+              aria-disabled={viewMode === "earth"}
+            >
+              <div className="celestial-mode">
+                <span>관점</span>
+                <div className="mode-segmented" aria-label="천체 관점">
+                  <button
+                    className={frameMode === "geo" ? "active" : ""}
+                    onClick={() => setFrameMode("geo")}
+                    title="지구를 중심에 둔 관점"
+                  >
+                    지구 중심
+                  </button>
+                  <button
+                    className={frameMode === "helio" ? "active" : ""}
+                    onClick={() => setFrameMode("helio")}
+                    title="태양을 중심에 둔 지동설 관점"
+                  >
+                    태양 중심
+                  </button>
+                </div>
+              </div>
+              <div className="celestial-mode">
+                <span>스케일</span>
+                <div className="mode-segmented" aria-label="천체 스케일">
+                  <button
+                    className={scaleMode === "learning" ? "active" : ""}
+                    onClick={() => setScaleMode("learning")}
+                  >
+                    학습용
+                  </button>
+                  <button
+                    className={scaleMode === "actual" ? "active" : ""}
+                    onClick={() => setScaleMode("actual")}
+                  >
+                    실제 비율
+                  </button>
+                </div>
+              </div>
+            </div>
             <span className="scene-hint">드래그해서 회전 · 휠로 확대</span>
           </div>
 
@@ -192,6 +238,8 @@ export default function App() {
               tideOptions={tideOptions}
               exaggeration={exaggeration}
               viewMode={viewMode}
+              frameMode={frameMode}
+              scaleMode={scaleMode}
             />
             <div className="scene-overlay scene-location">
               <span className="overlay-label">관측 지점</span>
@@ -201,8 +249,55 @@ export default function App() {
               </span>
             </div>
             <div className="scene-overlay scene-scale">
-              조석 변형 {Math.round(exaggeration * 1000)}× 시각 강조
+              {scaleMode === "actual"
+                ? "실제 비율 · 위치 표식 사용"
+                : `조석 변형 ${Math.round(exaggeration * 1000)}× 시각 강조`}
             </div>
+            {viewMode === "system" &&
+              frameMode === "geo" &&
+              scaleMode === "learning" && (
+                <div className="scene-overlay orbit-explanation">
+                  <strong>
+                    태양은 계절에 따라 ±23.4°, 달은 약 ±5.1° 기울어져
+                    보여요.
+                  </strong>
+                  <span>궤도선은 위치를 비교하기 위한 수평 가이드입니다.</span>
+                </div>
+              )}
+            {viewMode === "system" && scaleMode === "actual" && (
+              <>
+                <div className="scene-overlay actual-distance">
+                  {frameMode === "helio"
+                    ? "1 AU · 약 1억 5천만 km"
+                    : "384,400 km · 지구 약 30개"}
+                </div>
+                <div className="scene-overlay actual-scale-panel">
+                  <div>
+                    <small>태양 지름</small>
+                    <strong>139만 km</strong>
+                    <span>지구의 약 109배</span>
+                  </div>
+                  <div>
+                    <small>지구 지름</small>
+                    <strong>12,756 km</strong>
+                  </div>
+                  <div>
+                    <small>달 지름</small>
+                    <strong>3,475 km</strong>
+                    <span>지구의 약 1/4</span>
+                  </div>
+                  <div>
+                    <small>지구–달 평균 거리</small>
+                    <strong>384,400 km</strong>
+                    <span>지구 약 30개</span>
+                  </div>
+                  <p>
+                    실제 거리에서는 지구와 달이 점처럼 보여 위치 표식을
+                    함께 표시합니다.
+                  </p>
+                </div>
+              </>
+            )}
           </div>
 
           <div className="transport">

@@ -17,6 +17,8 @@ import {
 } from "../simulation/model";
 
 type ViewMode = "earth" | "system";
+export type FrameMode = "geo" | "helio";
+export type ScaleMode = "learning" | "actual";
 
 type TideSceneProps = {
   hour: number;
@@ -25,6 +27,8 @@ type TideSceneProps = {
   tideOptions: TideOptions;
   exaggeration: number;
   viewMode: ViewMode;
+  frameMode: FrameMode;
+  scaleMode: ScaleMode;
 };
 
 const toVector3 = (value: Vec3, length = 1) =>
@@ -40,14 +44,29 @@ const orbitPoints = (radius: number) =>
     ];
   });
 
-function CameraRig({ viewMode }: { viewMode: ViewMode }) {
+function CameraRig({
+  viewMode,
+  frameMode,
+  scaleMode,
+}: {
+  viewMode: ViewMode;
+  frameMode: FrameMode;
+  scaleMode: ScaleMode;
+}) {
   const { camera } = useThree();
   const target = useMemo(
-    () =>
-      viewMode === "earth"
-        ? new Vector3(0.2, 1.2, 4.6)
-        : new Vector3(0, 6.4, 10.8),
-    [viewMode],
+    () => {
+      if (viewMode === "earth") return new Vector3(0.2, 1.2, 4.6);
+      if (scaleMode === "actual") {
+        return frameMode === "helio"
+          ? new Vector3(0, 2, 16)
+          : new Vector3(0, 2.4, 8.5);
+      }
+      return frameMode === "helio"
+        ? new Vector3(0, 8.8, 13)
+        : new Vector3(0, 6.4, 10.8);
+    },
+    [frameMode, scaleMode, viewMode],
   );
   const moving = useRef(true);
 
@@ -259,6 +278,8 @@ function SceneContent({
   tideOptions,
   exaggeration,
   viewMode,
+  frameMode,
+  scaleMode,
 }: TideSceneProps) {
   const { sunDirection, moonDirection } = getCelestialDirections(
     hour,
@@ -266,12 +287,69 @@ function SceneContent({
     date,
     tideOptions.moonPhase,
   );
-  const sunPosition = toVector3(sunDirection, 8);
-  const moonPosition = toVector3(moonDirection, 4.2);
+  const surfaceMode = viewMode === "earth";
+  const learning = scaleMode === "learning";
+  const geo = frameMode === "geo" || surfaceMode;
+  const dayOfYear = Math.floor(
+    (Date.parse(`${date}T12:00:00Z`) -
+      Date.UTC(new Date(`${date}T12:00:00Z`).getUTCFullYear(), 0, 0)) /
+      86_400_000,
+  );
+  const orbitalAngle = Math.PI * 2 * (dayOfYear / 365.24 - 0.22);
+  const learningEarthPosition = new Vector3(
+    Math.cos(orbitalAngle) * 7.2,
+    0,
+    Math.sin(orbitalAngle) * 7.2,
+  );
+  const flatMoonDirection = new Vector3(
+    moonDirection[0],
+    0,
+    moonDirection[2],
+  ).normalize();
+  const earthPosition =
+    surfaceMode || (learning && geo)
+      ? new Vector3()
+      : learning
+        ? learningEarthPosition
+        : geo
+          ? new Vector3(-3, 0, 0)
+          : new Vector3(6, 0, 0);
+  const sunPosition =
+    surfaceMode || (learning && geo)
+      ? toVector3(sunDirection, 8)
+      : learning
+        ? new Vector3()
+        : geo
+          ? new Vector3(40, 0, 0)
+          : new Vector3(-6, 0, 0);
+  const moonPosition =
+    surfaceMode || (learning && geo)
+      ? toVector3(moonDirection, 4.2)
+      : learning
+        ? learningEarthPosition.clone().addScaledVector(flatMoonDirection, 0.78)
+        : geo
+          ? new Vector3(3, 0, 0)
+          : new Vector3(6.0308, 0, 0);
+  const earthScale =
+    surfaceMode || (learning && geo)
+      ? 1
+      : learning
+        ? 0.42
+        : geo
+          ? 0.1
+          : 0.000512;
+  const sunScale =
+    surfaceMode || (learning && geo) ? 1 : learning ? 1.7 : geo ? 0 : 0.112;
+  const moonScale =
+    surfaceMode || (learning && geo) ? 1 : learning ? 0.55 : geo ? 0.123 : 0.000632;
 
   return (
     <>
-      <CameraRig viewMode={viewMode} />
+      <CameraRig
+        viewMode={viewMode}
+        frameMode={frameMode}
+        scaleMode={scaleMode}
+      />
       <color attach="background" args={["#050b11"]} />
       <fog attach="fog" args={["#050b11", 10, 22]} />
       <ambientLight intensity={0.1} />
@@ -291,30 +369,92 @@ function SceneContent({
         speed={0.18}
       />
 
-      <Line
-        points={orbitPoints(4.2)}
-        color="#667981"
-        transparent
-        opacity={0.24}
-        lineWidth={0.7}
-      />
+      {learning && geo ? (
+        <Line
+          points={orbitPoints(4.2)}
+          color="#667981"
+          transparent
+          opacity={0.24}
+          lineWidth={0.7}
+        />
+      ) : learning ? (
+        <>
+          <Line
+            points={orbitPoints(7.2)}
+            color="#667981"
+            transparent
+            opacity={0.24}
+            lineWidth={0.7}
+          />
+          <group position={learningEarthPosition}>
+            <Line
+              points={orbitPoints(0.78)}
+              color="#82959b"
+              transparent
+              opacity={0.3}
+              lineWidth={0.7}
+            />
+          </group>
+        </>
+      ) : (
+        <Line
+          points={[
+            [geo ? -3 : -6, 0, 0],
+            [geo ? 3 : 6, 0, 0],
+          ]}
+          color="#91a4aa"
+          transparent
+          opacity={0.75}
+          lineWidth={0.8}
+        />
+      )}
 
-      <Earth
-        moonDirection={moonDirection}
-        sunDirection={sunDirection}
-        location={location}
-        tideOptions={tideOptions}
-        exaggeration={exaggeration}
-      />
+      <group position={earthPosition} scale={earthScale}>
+        <Earth
+          moonDirection={moonDirection}
+          sunDirection={sunDirection}
+          location={location}
+          tideOptions={tideOptions}
+          exaggeration={exaggeration}
+        />
+      </group>
+      {scaleMode === "actual" && (
+        <group position={earthPosition}>
+          <mesh>
+            <ringGeometry args={[0.11, 0.15, 32]} />
+            <meshBasicMaterial
+              color="#53d6df"
+              transparent
+              opacity={0.85}
+              depthTest={false}
+              side={DoubleSide}
+            />
+          </mesh>
+        </group>
+      )}
 
-      <group position={moonPosition}>
+      <group position={moonPosition} scale={moonScale}>
         <mesh>
           <sphereGeometry args={[0.22, 40, 32]} />
           <meshStandardMaterial color="#d5d6cf" roughness={0.92} />
         </mesh>
       </group>
+      {scaleMode === "actual" && (
+        <group position={moonPosition}>
+          <mesh>
+            <ringGeometry args={[0.055, 0.075, 24]} />
+            <meshBasicMaterial
+              color="#d5d6cf"
+              transparent
+              opacity={0.85}
+              depthTest={false}
+              side={DoubleSide}
+            />
+          </mesh>
+        </group>
+      )}
 
-      <group position={sunPosition}>
+      <group position={sunPosition} scale={sunScale}>
         <mesh>
           <sphereGeometry args={[0.52, 40, 32]} />
           <meshBasicMaterial color={new Color("#ffd26a")} />
@@ -326,7 +466,7 @@ function SceneContent({
         makeDefault
         enablePan={false}
         minDistance={2.8}
-        maxDistance={14}
+        maxDistance={scaleMode === "actual" ? 24 : 16}
         autoRotate={false}
         dampingFactor={0.08}
         enableDamping
