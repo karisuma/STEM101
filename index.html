@@ -3,160 +3,132 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta
-      name="description"
-      content="초등학생과 중학생을 위한 직관적인 수학·과학 인터랙티브 탐구 모음"
-    >
-    <title>STEM101 | 질문을 코드로, 원리를 내 것으로</title>
+    <meta name="description" content="STEM101 프로젝트 목록">
+    <title>STEM101 | 프로젝트</title>
     <link rel="stylesheet" href="assets/portal.css">
     <script type="module" src="assets/portal.js"></script>
   </head>
   <body>
-    <a class="skip-link" href="#catalog">프로젝트 목록으로 건너뛰기</a>
+    <a class="skip-link" href="#project-list">프로젝트 목록으로 건너뛰기</a>
 
     <header class="site-header">
-      <a class="brand" href="./" aria-label="STEM101 홈">
-        <span>STEM</span><strong>101</strong>
+      <a class="brand" href="./" aria-label="STEM101 홈">STEM<span>101</span></a>
+      <a
+        class="repository-link"
+        href="https://github.com/karisuma/STEM101"
+        target="_blank"
+        rel="noreferrer"
+      >
+        <svg aria-hidden="true" viewBox="0 0 24 24">
+          <path d="M12 .8a11.4 11.4 0 0 0-3.6 22.2c.6.1.8-.3.8-.6v-2.2c-3.4.7-4.1-1.4-4.1-1.4-.5-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.7 0-1.3.4-2.3 1.2-3.1-.1-.3-.5-1.6.1-3.1 0 0 1-.3 3.1 1.2a10.6 10.6 0 0 1 5.7 0C15.8 4 16.8 4.3 16.8 4.3c.6 1.5.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.8 5.4-5.5 5.7.4.4.8 1.1.8 2.2v4c0 .3.2.7.8.6A11.4 11.4 0 0 0 12 .8Z"/>
+        </svg>
+        GitHub 저장소
       </a>
-      <nav aria-label="주요 메뉴">
-        <a href="#catalog">프로젝트</a>
-        <a href="#process">만드는 과정</a>
-        <a href="#class-guide">수업 안내</a>
-      </nav>
     </header>
 
     <main>
-      <section class="hero" aria-labelledby="hero-title">
-        <div class="hero-copy">
-          <h1 id="hero-title">질문을 <em>코드</em>로,<br><strong>원리</strong>를 내 것으로</h1>
-          <p>선생님과 학생이 함께 시뮬레이터를 만들고 테스트하며 수학과 과학을 이해합니다.</p>
-          <a class="primary-action" href="projects/middle/science/tide-sim/">
-            첫 프로젝트 살펴보기
-            <span aria-hidden="true">→</span>
-          </a>
-        </div>
+      <h1>프로젝트</h1>
 
-        <div class="maker-preview" aria-label="코드를 만들고 조석 시뮬레이터를 테스트하는 제작 화면">
-          <div class="maker-toolbar">
-            <span>&lt;/&gt; 코드</span>
-            <span>시뮬레이터</span>
-            <button type="button" tabindex="-1">▶ 실행</button>
-          </div>
-          <div class="maker-workspace">
-            <div class="code-pane" aria-hidden="true">
-              <ol>
-                <li><code><b>let</b> sunAngle = 0;</code></li>
-                <li><code><b>let</b> moonAngle = 0;</code></li>
-                <li><code><b>let</b> time = 0;</code></li>
-                <li></li>
-                <li><code><b>function</b> drawTide() {</code></li>
-                <li><code>&nbsp; tide = calculateTide();</code></li>
-                <li><code>&nbsp; test(tide);</code></li>
-                <li><code>}</code></li>
-              </ol>
-              <div class="prompt">시뮬레이터를 어떻게 바꿔볼까요?</div>
-            </div>
-            <div class="simulation-pane" aria-hidden="true">
-              <div class="simulation-space">
-                <span class="maker-sun"></span>
-                <span class="maker-earth"></span>
-                <span class="maker-moon"></span>
-                <span class="maker-orbit"></span>
-              </div>
-              <div class="test-result">
-                <span>✓</span>
-                <div><b>테스트 통과</b><small>예상과 결과가 잘 맞아요.</small></div>
-              </div>
-            </div>
-          </div>
-        </div>
+      <section class="statistics" aria-label="프로젝트 통계">
+        <article>
+          <span>전체 프로젝트</span>
+          <strong id="stat-total">0</strong>
+        </article>
+        <article>
+          <span>완료</span>
+          <strong id="stat-complete">0</strong>
+        </article>
+        <article>
+          <span>제작 중</span>
+          <strong id="stat-progress">0</strong>
+        </article>
+        <article>
+          <span>과목</span>
+          <strong id="stat-subjects">0</strong>
+        </article>
       </section>
 
-      <section class="catalog-section" id="catalog" aria-labelledby="catalog-title">
-        <div class="section-heading">
-          <div>
-            <span class="heading-icon" aria-hidden="true">▣</span>
-            <h2 id="catalog-title">함께 만드는 프로젝트</h2>
-          </div>
-          <p id="result-count" aria-live="polite"></p>
-        </div>
+      <section class="controls" aria-label="프로젝트 검색과 필터">
+        <label class="search-control">
+          <span class="visually-hidden">프로젝트 이름 검색</span>
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <circle cx="10.5" cy="10.5" r="6.5"></circle>
+            <path d="m15.5 15.5 5 5"></path>
+          </svg>
+          <input id="project-search" type="search" placeholder="프로젝트 이름 검색">
+        </label>
 
-        <div class="filters" aria-label="프로젝트 필터">
-          <fieldset data-filter-group="level">
-            <legend>학년</legend>
+        <fieldset data-filter-group="level">
+          <legend>학년</legend>
+          <div>
             <button class="selected" type="button" data-value="all" aria-pressed="true">전체</button>
             <button type="button" data-value="elementary" aria-pressed="false">초등</button>
             <button type="button" data-value="middle" aria-pressed="false">중등</button>
-          </fieldset>
-          <fieldset data-filter-group="subject">
-            <legend>과목</legend>
+          </div>
+        </fieldset>
+
+        <fieldset data-filter-group="subject">
+          <legend>과목</legend>
+          <div>
             <button class="selected" type="button" data-value="all" aria-pressed="true">전체</button>
             <button type="button" data-value="math" aria-pressed="false">수학</button>
             <button type="button" data-value="science" aria-pressed="false">과학</button>
-          </fieldset>
-        </div>
+          </div>
+        </fieldset>
 
-        <div id="project-list" class="project-list">
-          <p class="loading">탐구 목록을 불러오고 있습니다.</p>
-        </div>
+        <fieldset data-filter-group="status">
+          <legend>상태</legend>
+          <div>
+            <button class="selected" type="button" data-value="all" aria-pressed="true">전체</button>
+            <button type="button" data-value="complete" aria-pressed="false">완료</button>
+            <button type="button" data-value="in-progress" aria-pressed="false">제작 중</button>
+          </div>
+        </fieldset>
       </section>
 
-      <section class="making-process" id="process" aria-labelledby="process-title">
-        <h2 id="process-title">우리는 이렇게<br>만듭니다</h2>
-        <ol>
-          <li><span>1</span><div><b>질문하기</b><small>궁금한 현상에서 질문을 만듭니다.</small></div></li>
-          <li><span>2</span><div><b>바이브코딩</b><small>아이디어를 코드와 화면으로 만듭니다.</small></div></li>
-          <li><span>3</span><div><b>테스트하기</b><small>예상과 결과를 비교하고 수정합니다.</small></div></li>
-          <li><span>4</span><div><b>설명하기</b><small>발견한 원리를 다른 사람에게 설명합니다.</small></div></li>
-        </ol>
-      </section>
+      <section class="project-section" aria-labelledby="project-list-title">
+        <div class="list-heading">
+          <h2 id="project-list-title">프로젝트 목록</h2>
+          <span id="result-count" aria-live="polite"></span>
+        </div>
 
-      <section class="class-guide" id="class-guide">
-        <article>
-          <div class="class-illustration" aria-hidden="true">
-            <span>학생</span><i>+</i><span>선생님</span>
+        <div class="project-table" id="project-list">
+          <div class="table-header" aria-hidden="true">
+            <span>프로젝트</span>
+            <span>학년</span>
+            <span>과목</span>
+            <span>상태</span>
+            <span>기술</span>
+            <span>열기</span>
           </div>
-          <div>
-            <h2>학생과 선생님이<br>같은 화면에서 함께</h2>
-            <ul>
-              <li>질문과 아이디어를 실시간으로 나눕니다.</li>
-              <li>코드가 완벽하지 않아도 바로 실행해 봅니다.</li>
-              <li>선생님은 정답 대신 테스트 방법을 안내합니다.</li>
-            </ul>
+          <div id="project-rows">
+            <p class="message">프로젝트 목록을 불러오고 있습니다.</p>
           </div>
-        </article>
-        <article>
-          <span class="process-mark" aria-hidden="true">↻</span>
-          <div>
-            <h2>완성품보다 중요한<br>제작 과정</h2>
-            <ul>
-              <li>스스로 질문하고 해결하는 힘</li>
-              <li>테스트와 수정으로 기르는 과학적 사고</li>
-              <li>과정을 설명하며 깊어지는 이해</li>
-            </ul>
-          </div>
-        </article>
+        </div>
       </section>
     </main>
 
-    <footer>STEM101 · 질문하고, 만들고, 테스트하고, 설명하기</footer>
+    <footer>
+      <a href="https://github.com/karisuma/STEM101" target="_blank" rel="noreferrer">
+        GitHub 저장소
+      </a>
+    </footer>
 
     <template id="project-template">
       <article class="project-row">
-        <div class="project-visual" aria-hidden="true">
-          <span class="mini-earth"></span>
-          <span class="mini-moon"></span>
-          <span class="mini-sun"></span>
-          <span class="wave"></span>
+        <div class="project-name" data-label="프로젝트">
+          <strong></strong>
+          <small></small>
         </div>
-        <div class="project-copy">
-          <h3></h3>
-          <p class="metadata"></p>
-          <p class="summary"></p>
-        </div>
-        <a class="project-action">
-          프로젝트 보기
-          <span aria-hidden="true">→</span>
+        <span class="grade" data-label="학년"></span>
+        <span class="subject" data-label="과목"></span>
+        <span class="status" data-label="상태"></span>
+        <span class="technology" data-label="기술"></span>
+        <a class="open-project" data-label="열기">
+          열기
+          <svg aria-hidden="true" viewBox="0 0 20 20">
+            <path d="M7 4h9v9M16 4 6 14"></path>
+          </svg>
         </a>
       </article>
     </template>

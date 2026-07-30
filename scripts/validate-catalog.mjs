@@ -12,7 +12,9 @@ const required = [
   "gradeLabel",
   "subject",
   "subjectLabel",
-  "durationMinutes",
+  "status",
+  "statusLabel",
+  "technology",
   "summary",
   "entry",
 ];

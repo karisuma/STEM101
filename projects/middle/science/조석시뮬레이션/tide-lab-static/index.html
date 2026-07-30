@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#071018">
+  <title>Tide Lab — 하루의 바다</title>
+  <style>
+    :root{font-family:Pretendard,"Noto Sans KR",system-ui,sans-serif;color:#edf4f2;background:#071018;--cyan:#53d6df;--coral:#ff7557;--gold:#f1c969;--muted:#91a4aa;--line:rgba(183,210,215,.16)}
+    *{box-sizing:border-box}body{margin:0;min-width:320px;background:#071018}button,input,select{font:inherit;color:inherit}button,select,input[type=range]{cursor:pointer}
+    .app{width:min(1500px,100%);margin:auto;padding:0 24px 56px}.header{min-height:108px;display:grid;grid-template-columns:190px 1fr auto;align-items:center;gap:24px;border-bottom:1px solid var(--line)}
+    .brand{display:flex;align-items:center;gap:11px;font-size:13px;font-weight:800;letter-spacing:.15em}.mark{display:grid;place-items:center;width:34px;height:34px;border:1px solid #53d6df88;color:var(--cyan);font-size:24px}
+    .header h1{margin:0;font-family:Georgia,serif;font-size:clamp(24px,2.3vw,38px);font-weight:500}.eyebrow{color:var(--cyan);font-size:10px;font-weight:800;letter-spacing:.13em}
+    .live{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:11px}.dot{width:7px;height:7px;border-radius:50%;background:var(--coral);box-shadow:0 0 0 5px #ff755716}
+    .workspace{position:relative;display:grid;grid-template-columns:minmax(0,1fr);border-bottom:1px solid var(--line)}.stage{min-width:0}
+    .stage-head{height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 12px 0 18px;border-bottom:1px solid var(--line);font-size:11px;color:var(--muted)}.stage-actions{display:flex;align-items:center;gap:10px}.panel-toggle,.today-button{min-height:34px;padding:0 12px;border:1px solid #53d6df66;background:#133e47;color:var(--cyan);font-size:10px}.today-button{border-color:#f1c96966;background:#f1c9690d;color:var(--gold)}.today-button.active{background:var(--gold);color:#101820}.corner-logo{position:absolute;z-index:20;top:14px;right:14px;width:92px;height:auto;display:block;filter:drop-shadow(0 4px 12px #0008);pointer-events:none}
+    .tabs{display:flex;height:100%;margin-left:-18px}.tabs button{min-width:105px;border:0;border-right:1px solid var(--line);background:transparent;color:var(--muted)}.tabs button.on{color:var(--cyan);border-bottom:2px solid var(--cyan)}
+    #scene{position:relative;height:clamp(620px,calc(100svh - 206px),900px);background:#050b11;overflow:hidden}#scene canvas{display:block;width:100%;height:100%}.overlay{position:absolute;z-index:2;pointer-events:none}
+    .place{top:22px;left:22px;display:grid;gap:2px;padding-left:12px;border-left:2px solid var(--coral)}.place small{color:var(--coral);font-weight:800}.place span{color:var(--muted);font-size:10px}
+    .scale{right:18px;bottom:16px;padding:7px 9px;border:1px solid var(--line);background:#050b11bb;color:var(--muted);font-size:9px}
+    .direct-hint{left:22px;bottom:18px;display:flex;gap:8px;align-items:center;padding:9px 11px;border:1px solid #53d6df44;background:#071018e8;color:#b8c8cb;font-size:10px}.direct-hint b{color:var(--cyan)}.drag-toast{top:20px;left:50%;transform:translateX(-50%);padding:8px 12px;background:#53d6df;color:#071018;font-size:10px;font-weight:800;opacity:0;transition:opacity .15s}.drag-toast.show{opacity:1}
+    .object-label{position:absolute;z-index:3;display:grid;gap:1px;transform:translate(-50%,-50%);padding:6px 8px;border:1px solid #ffffff2a;background:#071018e6;font-size:10px;font-weight:800;pointer-events:none;white-space:nowrap}.object-label span{color:var(--muted);font-size:8px;font-weight:500}.object-label.sun{border-color:#f1c96988;color:var(--gold)}.object-label.moon{border-color:#bdc8cb88}.object-label.avatar{border-color:#ff755788;color:var(--coral)}
+    .causal-flow{display:grid;grid-template-columns:1fr 28px 1fr 28px 1fr;align-items:center;min-height:72px;border-top:1px solid var(--line);background:#09141b}.cause-card{padding:12px 16px}.cause-card small{display:block;color:#6f858b;font-size:9px}.cause-card strong{display:block;margin-top:3px;font-size:12px}.cause-card.active strong{color:var(--cyan)}.flow-arrow{text-align:center;color:#526970}
+    .transport{min-height:76px;display:grid;grid-template-columns:46px 82px 1fr auto;gap:14px;align-items:center;padding:12px 18px;border-top:1px solid var(--line)}
+    .play{width:42px;height:42px;border:1px solid #53d6df88;border-radius:50%;background:#133e47;color:var(--cyan);font-weight:800}.clock{display:grid}.clock small{color:var(--muted);font-size:9px}.clock strong{font:20px Consolas,monospace}
+    input[type=range]{width:100%;accent-color:var(--cyan)}select,input[type=date],input[type=number]{width:100%;min-height:39px;padding:0 9px;border:1px solid var(--line);border-radius:0;background:#09131a}
+    .panel{position:absolute;z-index:8;top:72px;right:16px;display:flex;flex-direction:column;width:310px;max-height:calc(100% - 88px);overflow:auto;border:1px solid #b7d2d72b;background:#091219f5;box-shadow:0 18px 55px #0009;transform:translateX(calc(100% + 32px));opacity:0;pointer-events:none;transition:transform .22s ease,opacity .22s ease;backdrop-filter:blur(14px)}.panel.open{transform:translateX(0);opacity:1;pointer-events:auto}.status,.section{padding:20px;border-bottom:1px solid var(--line)}.status{position:relative;order:1}.tide-settings{order:2}.location-settings{order:3}.panel-close{position:absolute;top:12px;right:12px;width:30px;height:30px;border:1px solid var(--line);background:transparent;color:var(--muted)}.status-top{display:flex;align-items:center;justify-content:space-between;padding-right:32px}.status h2{margin:3px 0;font:30px Consolas,monospace}
+    .sun-state{width:34px;height:34px;border-radius:50%;background:var(--gold);box-shadow:0 0 20px #f1c96933}.water{display:flex;align-items:end;justify-content:space-between;margin-top:20px}.water small,.status p,.field>span{color:var(--muted);font-size:10px}.water strong{display:block;font:34px Georgia,serif}.trend{color:var(--cyan);font-size:11px}
+    .meter{position:relative;height:8px;margin-top:10px;background:#1b2b33}.meter::before{content:"간조";position:absolute;top:12px;left:0;color:#6c8086;font-size:8px}.meter::after{content:"만조";position:absolute;top:12px;right:0;color:#6c8086;font-size:8px}.meter i{display:block;height:100%;background:var(--cyan)}.status p{line-height:1.65;margin:25px 0 0}.section-title{display:flex;gap:10px;margin-bottom:14px;font-size:13px}.section-title b{color:var(--cyan);font:10px Consolas,monospace}.field{display:grid;gap:6px;margin-top:12px}
+    .coords{display:grid;grid-template-columns:1fr 1fr;gap:9px}.location-btn{width:100%;min-height:38px;margin-top:9px;border:1px solid #53d6df55;background:#53d6df0c;color:var(--cyan);font-size:11px}
+    .toggles{display:flex;gap:8px}.toggles button,.phases button{flex:1;min-height:42px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:10px}.toggles button.on,.phases button.on{background:#133e47;color:var(--cyan);border-color:#53d6df55}.phases{display:flex;margin-top:12px}.advanced{margin-top:12px;border-top:1px solid var(--line)}.advanced summary{padding:12px 0;color:var(--muted);font-size:10px;cursor:pointer}.advanced[open] summary{color:var(--cyan)}
+    .timeline{padding-top:40px}.timeline-head{display:flex;justify-content:space-between;align-items:end;padding:0 14px 20px}.timeline h2{margin:6px 0 0;font:clamp(25px,2.4vw,38px) Georgia,serif}.finding{max-width:330px;padding-left:12px;border-left:2px solid var(--gold);color:var(--muted);font-size:10px}.finding b{color:var(--gold)}
+    .chart-box{padding:20px 12px 10px;border-block:1px solid var(--line);overflow:auto}.chart-box svg{display:block;width:100%;min-width:760px}.grid{stroke:#b7d2d719}.curve{fill:none;stroke:var(--cyan);stroke-width:2.4}.area{fill:#53d6df12}.now{stroke:#fff9;stroke-dasharray:3 4}.now-tag{fill:#edf4f2;font:800 9px Pretendard,sans-serif}.label{fill:#83969b;font:10px Pretendard,sans-serif}.axis{fill:#71858b;font:9px Consolas,monospace}.high{fill:var(--cyan)}.low{fill:var(--coral)}
+    .note{display:flex;align-items:center;justify-content:center;gap:20px;padding:26px 12px;color:var(--muted);font-size:11px}.note b{color:var(--gold);font:23px Georgia,serif}
+    @media(max-width:980px){.workspace{grid-template-columns:1fr}.stage{border-right:0}}@media(max-width:720px){.app{padding-inline:12px}.header{grid-template-columns:1fr;gap:8px;padding:17px 0}.live{display:none}.workspace{display:block}.panel{top:66px;right:8px;width:calc(100% - 16px);max-height:calc(100% - 78px)}.corner-logo{top:12px;right:12px;width:72px}#scene{height:max(500px,calc(100svh - 190px))}.stage-actions #stageGuide{display:none}.transport{grid-template-columns:44px 1fr auto}.transport input{grid-column:1/-1}.timeline-head{display:block}.finding{margin-top:15px}.causal-flow{grid-template-columns:1fr}.flow-arrow{transform:rotate(90deg)}.object-label{font-size:9px}}
+  </style>
+</head>
+<body>
+<main class="app">
+  <section class="workspace">
+    <div class="stage">
+      <div class="stage-head"><div class="tabs"><button id="earthView">내 위치 설정</button><button id="systemView" class="on">궤도 조작</button></div><div class="stage-actions"><span id="stageGuide">태양이나 달을 잡아 궤도 위로 옮겨보세요</span><button id="todayButton" class="today-button">오늘의 해·달</button><button id="panelToggle" class="panel-toggle" aria-expanded="false">실험 설정</button></div></div>
+      <div id="scene">
+        <img class="corner-logo" src="../imgs/Coding101-Logo4.png" alt="Coding101">
+        <div class="overlay place"><small>관측 지점</small><strong id="placeName">제주</strong><span id="placeCoords">33.50°, 126.53°</span></div>
+        <div class="overlay scale">조석 변형 120× 시각 강조</div>
+        <div class="overlay direct-hint" id="directHint"><b>직접 조작</b><span>☀ 태양 · ● 달을 드래그</span></div>
+        <div class="overlay drag-toast" id="dragToast">태양을 이동하는 중</div>
+        <div class="object-label sun" id="sunLabel">태양<span>잡아서 이동</span></div>
+        <div class="object-label moon" id="moonLabel">달<span>잡아서 이동</span></div>
+        <div class="object-label avatar" id="avatarLabel">나<span>지구 위에서 이동</span></div>
+      </div>
+      <div class="causal-flow" aria-label="조석 원인과 결과">
+        <div class="cause-card active"><small>1 · 천체 배치</small><strong id="alignmentResult">일렬에 가까움</strong></div>
+        <div class="flow-arrow">→</div>
+        <div class="cause-card"><small>2 · 지구의 반응</small><strong id="bulgeResult">조차가 커짐</strong></div>
+        <div class="flow-arrow">→</div>
+        <div class="cause-card"><small>3 · 내 위치</small><strong id="localResult">수위가 상승 중</strong></div>
+      </div>
+      <div class="transport">
+        <button id="play" class="play" aria-label="일시정지">Ⅱ</button>
+        <div class="clock"><small>지역 태양시</small><strong id="time">05:45</strong></div>
+        <input id="timeRange" type="range" min="0" max="24" step=".01" value="5.75" aria-label="하루 시간">
+        <select id="speed" aria-label="재생 속도"><option value=".25">15분/초</option><option value="1" selected>1시간/초</option><option value="4">4시간/초</option></select>
+      </div>
+    </div>
+    <aside class="panel" id="panel">
+      <section class="status">
+        <button id="panelClose" class="panel-close" aria-label="설정 닫기">×</button>
+        <div class="status-top"><div><span class="eyebrow" id="dayLabel">낮</span><h2 id="statusTime">05:45</h2></div><i id="sunState" class="sun-state"></i></div>
+        <div class="water"><div><small>현재 상대 수위</small><strong id="level">72%</strong></div><span id="trend" class="trend">상승 중</span></div>
+        <div class="meter"><i id="meter" style="width:72%"></i></div>
+        <p>낮밤은 태양 방향으로, 상대 수위는 달과 태양의 조석 퍼텐셜을 합성해 계산합니다.</p>
+      </section>
+      <section class="section location-settings">
+        <div class="section-title"><b>01</b><strong>위치와 날짜</strong></div>
+        <label class="field"><span>관측 위치</span><select id="location"><option value="37.5665,126.978,서울">서울</option><option value="35.1796,129.0756,부산">부산</option><option value="33.4996,126.5312,제주" selected>제주</option><option value="37.4563,126.7052,인천">인천</option></select></label>
+        <button id="geo" class="location-btn">◎ 현재 위치 사용</button>
+        <details class="advanced">
+          <summary>좌표와 날짜 직접 입력</summary>
+          <div class="coords"><label class="field"><span>위도</span><input id="lat" type="number" value="33.4996" step=".0001"></label><label class="field"><span>경도</span><input id="lon" type="number" value="126.5312" step=".0001"></label></div>
+          <label class="field"><span>관찰 날짜</span><input id="date" type="date"></label>
+        </details>
+      </section>
+      <section class="section tide-settings">
+        <div class="section-title"><b>02</b><strong>조석 조건</strong></div>
+        <div class="toggles"><button id="moonToggle" class="on">달 영향 1.00</button><button id="sunToggle" class="on">태양 영향 0.46</button></div>
+        <div class="phases"><button data-phase="0" class="on">삭·망 / 사리</button><button data-phase=".125">중간</button><button data-phase=".25">상·하현 / 조금</button></div>
+        <label class="field"><span>조석 팽대부 강조</span><input id="bulge" type="range" min=".04" max=".2" step=".01" value=".12"></label>
+      </section>
+    </aside>
+  </section>
+  <section class="timeline">
+    <div class="timeline-head"><div><span class="eyebrow">24시간 관찰 기록</span><h2><span id="chartPlace">제주</span>의 낮밤과 상대 수위</h2></div><div class="finding"><b id="condition">사리</b><p id="findingText">달과 태양의 효과가 같은 축에서 더해집니다.</p></div></div>
+    <div class="chart-box"><svg id="chart" viewBox="0 0 1000 250" role="img" aria-label="24시간 조석 수위 그래프"></svg></div>
+    <div class="note"><b>24h 50m</b><span>달에 대한 하루는 태양일보다 약 50분 깁니다. 그래서 만조 시각은 다음 날 조금씩 늦어집니다.</span></div>
+  </section>
+</main>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.min.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.185.1/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+const $=id=>document.getElementById(id), TAU=Math.PI*2, DEG=Math.PI/180, lunarDay=24+50/60;
+const state={hour:5.75,playing:true,speed:1,lat:33.4996,lon:126.5312,name:"제주",date:"",moon:true,sun:true,phase:0,sunOffset:0,moonOffset:0,todayMode:false,todayEpoch:0,bulge:.12};
+const pad=n=>String(n).padStart(2,"0"), fmt=h=>{h=(h%24+24)%24;const m=Math.round(h*60);return `${pad(Math.floor(m/60)%24)}:${pad(m%60)}`};
+const vec=(lat,lon)=>new THREE.Vector3(Math.cos(lat*DEG)*Math.cos(lon*DEG),Math.sin(lat*DEG),Math.cos(lat*DEG)*Math.sin(lon*DEG));
+const dayOfYear=d=>{const x=new Date(d+"T12:00:00Z"),s=new Date(Date.UTC(x.getUTCFullYear(),0,0));return Math.floor((x-s)/86400000)};
+const wrapDegrees=value=>((value%360)+360)%360,wrap180=value=>((value+180)%360+360)%360-180;
+const julianDate=date=>date.getTime()/86400000+2440587.5;
+function orbitalToEquatorial(x,y,z,days){const obliquity=(23.4393-3.563e-7*days)*DEG,xeq=x,yeq=y*Math.cos(obliquity)-z*Math.sin(obliquity),zeq=y*Math.sin(obliquity)+z*Math.cos(obliquity),ra=Math.atan2(yeq,xeq)/DEG,declination=Math.atan2(zeq,Math.sqrt(xeq*xeq+yeq*yeq))/DEG;return{ra:wrapDegrees(ra),declination}}
+function astronomicalDirections(date){const jd=julianDate(date),days=jd-2451543.5;
+ const sunW=wrapDegrees(282.9404+4.70935e-5*days),sunEccentricity=.016709-1.151e-9*days,sunM=wrapDegrees(356.047+.9856002585*days)*DEG,sunE=sunM+sunEccentricity*Math.sin(sunM)*(1+sunEccentricity*Math.cos(sunM)),sunX=Math.cos(sunE)-sunEccentricity,sunY=Math.sqrt(1-sunEccentricity*sunEccentricity)*Math.sin(sunE),sunV=Math.atan2(sunY,sunX),sunR=Math.sqrt(sunX*sunX+sunY*sunY),sunLon=sunV+sunW*DEG,sunEq=orbitalToEquatorial(sunR*Math.cos(sunLon),sunR*Math.sin(sunLon),0,days);
+ const node=wrapDegrees(125.1228-.0529538083*days)*DEG,inclination=5.1454*DEG,periapsis=wrapDegrees(318.0634+.1643573223*days)*DEG,moonM=wrapDegrees(115.3654+13.0649929509*days)*DEG,moonEccentricity=.0549,moonE=moonM+moonEccentricity*Math.sin(moonM)*(1+moonEccentricity*Math.cos(moonM)),moonXv=60.2666*(Math.cos(moonE)-moonEccentricity),moonYv=60.2666*Math.sqrt(1-moonEccentricity*moonEccentricity)*Math.sin(moonE),moonV=Math.atan2(moonYv,moonXv),moonR=Math.sqrt(moonXv*moonXv+moonYv*moonYv),argument=moonV+periapsis,moonX=moonR*(Math.cos(node)*Math.cos(argument)-Math.sin(node)*Math.sin(argument)*Math.cos(inclination)),moonY=moonR*(Math.sin(node)*Math.cos(argument)+Math.cos(node)*Math.sin(argument)*Math.cos(inclination)),moonZ=moonR*Math.sin(argument)*Math.sin(inclination),moonEq=orbitalToEquatorial(moonX,moonY,moonZ,days);
+ const centuries=(jd-2451545)/36525,gmst=wrapDegrees(280.46061837+360.98564736629*(jd-2451545)+.000387933*centuries*centuries-centuries*centuries*centuries/38710000);
+ return{sun:vec(sunEq.declination,wrap180(sunEq.ra-gmst)+state.sunOffset),moon:vec(moonEq.declination,wrap180(moonEq.ra-gmst)+state.moonOffset)}
+}
+const directions=h=>{if(state.todayMode)return astronomicalDirections(new Date(state.todayEpoch+h*3600000));const day=dayOfYear(state.date),decl=23.44*Math.sin(TAU*(284+day)/365.24),moonDecl=5.14*Math.sin(TAU*(day/27.321661+state.phase));return{sun:vec(decl,state.lon+180+h/24*360+state.sunOffset),moon:vec(moonDecl,state.lon+180+state.phase*360+h/lunarDay*360+state.moonOffset)}};
+const p2=x=>(3*x*x-1)/2;
+const sample=h=>{const o=vec(state.lat,state.lon),d=directions(h),scale=(state.moon?1:0)+(state.sun ? .46 : 0);return{h,tide:scale?((state.moon?p2(o.dot(d.moon)):0)+(state.sun ? .46*p2(o.dot(d.sun)) : 0))/scale:0,light:o.dot(d.sun)}};
+
+const host=$("scene"),renderer=new THREE.WebGLRenderer({antialias:true}),scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(42,1,.1,100);
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));renderer.setClearColor(0x07131b);host.prepend(renderer.domElement);renderer.domElement.style.touchAction="none";camera.position.set(0,6.4,10.8);
+const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.enablePan=false;controls.minDistance=2.8;controls.maxDistance=14;
+scene.add(new THREE.AmbientLight(0xb8d0d5,.62));scene.add(new THREE.HemisphereLight(0x91bbc5,0x18252c,.72));const light=new THREE.DirectionalLight(0xfff1c1,2.65);scene.add(light);
+const earth=new THREE.Mesh(new THREE.SphereGeometry(1,72,48),new THREE.MeshStandardMaterial({color:0x315866,emissive:0x0b2028,emissiveIntensity:.58,roughness:.82}));scene.add(earth);
+const grid=new THREE.Mesh(new THREE.SphereGeometry(1.012,32,20),new THREE.MeshBasicMaterial({color:0xb7c9cc,wireframe:true,transparent:true,opacity:.13}));scene.add(grid);
+const atmosphere=new THREE.Mesh(new THREE.SphereGeometry(1.15,48,32),new THREE.MeshBasicMaterial({color:0x4fd8ea,transparent:true,opacity:.07,side:THREE.BackSide}));scene.add(atmosphere);
+const oceanGeo=new THREE.SphereGeometry(1.035,96,64),base=oceanGeo.attributes.position.array.slice(),oceanMat=new THREE.MeshPhysicalMaterial({color:0x238fa0,emissive:0x082d35,emissiveIntensity:.42,transparent:true,opacity:.72,roughness:.25,metalness:.1,clearcoat:.5,side:THREE.DoubleSide});
+const ocean=new THREE.Mesh(oceanGeo,oceanMat);scene.add(ocean);
+const moon=new THREE.Mesh(new THREE.SphereGeometry(.22,32,24),new THREE.MeshStandardMaterial({color:0xd5d6cf,roughness:.92}));scene.add(moon);
+const sun=new THREE.Mesh(new THREE.SphereGeometry(.5,32,24),new THREE.MeshBasicMaterial({color:0xffd26a}));scene.add(sun);
+const avatar=new THREE.Group();
+const avatarBody=new THREE.Mesh(new THREE.ConeGeometry(.055,.12,12),new THREE.MeshBasicMaterial({color:0xff7557}));
+avatarBody.position.y=.055;
+const avatarHead=new THREE.Mesh(new THREE.SphereGeometry(.042,16,12),new THREE.MeshBasicMaterial({color:0xffd7bf}));
+avatarHead.position.y=.145;
+const markerHit=new THREE.Mesh(new THREE.SphereGeometry(.12,12,10),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));
+markerHit.position.y=.075;
+avatar.add(avatarBody,avatarHead,markerHit);scene.add(avatar);
+function orbitRing(radius,color){const points=[];for(let i=0;i<128;i++){const a=i/128*TAU;points.push(new THREE.Vector3(Math.cos(a)*radius,0,Math.sin(a)*radius))}const geometry=new THREE.BufferGeometry().setFromPoints(points),material=new THREE.LineBasicMaterial({color,transparent:true,opacity:.3});scene.add(new THREE.LineLoop(geometry,material))}
+orbitRing(4.2,0x82959b);orbitRing(8,0x5d7077);
+const starsGeo=new THREE.BufferGeometry(),stars=[];for(let i=0;i<900;i++){const r=18+Math.random()*25,a=Math.random()*TAU,z=Math.random()*2-1,q=Math.sqrt(1-z*z);stars.push(r*q*Math.cos(a),r*z,r*q*Math.sin(a))}starsGeo.setAttribute("position",new THREE.Float32BufferAttribute(stars,3));scene.add(new THREE.Points(starsGeo,new THREE.PointsMaterial({color:0xb7c5ca,size:.035,transparent:true,opacity:.65})));
+
+function deform(d){const a=oceanGeo.attributes.position.array;for(let i=0;i<a.length;i+=3){const n=new THREE.Vector3(base[i],base[i+1],base[i+2]).normalize(),scale=(state.moon?1:0)+(state.sun ? .46 : 0),t=scale?((state.moon?p2(n.dot(d.moon)):0)+(state.sun ? .46*p2(n.dot(d.sun)) : 0))/scale:0,r=1.035+t*state.bulge;a[i]=n.x*r;a[i+1]=n.y*r;a[i+2]=n.z*r}oceanGeo.attributes.position.needsUpdate=true;oceanGeo.computeVertexNormals()}
+function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(host);resize();
+
+const chart=$("chart"),W=1000,H=250,L=48,R=20,T=20,B=38,x=h=>L+h/26*(W-L-R),y=v=>T+(1.08-v)/(1.08+.58)*(H-T-B);
+function drawChart(){const s=[];for(let h=0;h<=26;h+=.25)s.push(sample(h));let html=`<rect x="${L}" y="${T}" width="${W-L-R}" height="${H-T-B}" fill="#08131d"/>`;
+ s.slice(0,-1).forEach((q,i)=>{if(q.light>0)html+=`<rect x="${x(q.h)}" y="${T}" width="${x(s[i+1].h)-x(q.h)+.2}" height="${H-T-B}" fill="#f1c96916"/>`});
+ html+=`<rect x="${x(24)}" y="${T}" width="${x(26)-x(24)}" height="${H-T-B}" fill="#ffffff08" stroke="#ffffff18" stroke-dasharray="5 5"/>`;
+ [0,.5,1].forEach(q=>html+=`<line class="grid" x1="${L}" x2="${W-R}" y1="${T+q*(H-T-B)}" y2="${T+q*(H-T-B)}"/>`);
+ const path=s.map((q,i)=>`${i?"L":"M"}${x(q.h).toFixed(1)},${y(q.tide).toFixed(1)}`).join(" ");html+=`<path class="area" d="${path}L${x(26)},${H-B}L${x(0)},${H-B}Z"/><path class="curve" d="${path}"/>`;
+ s.slice(1,-1).forEach((q,i)=>{const p=s[i],n=s[i+2],high=q.tide>p.tide&&q.tide>=n.tide,low=q.tide<p.tide&&q.tide<=n.tide;if(high||low)html+=`<circle class="${high?"high":"low"}" cx="${x(q.h)}" cy="${y(q.tide)}" r="5"/><text class="label" text-anchor="middle" x="${x(q.h)}" y="${y(q.tide)+(high?-12:19)}">${high?"만조":"간조"} ${fmt(q.h)}</text>`});
+ html+=`<line class="now" x1="${x(state.hour)}" x2="${x(state.hour)}" y1="${T}" y2="${H-B}"/><text class="now-tag" text-anchor="middle" x="${x(state.hour)}" y="${T-7}">지금 ${fmt(state.hour)}</text>`;[0,3,6,9,12,15,18,21,24,26].forEach(h=>html+=`<text class="axis" text-anchor="middle" x="${x(h)}" y="${H-12}">${h===26?"+2h":pad(h)}</text>`);chart.innerHTML=html}
+function update(){const q=sample(state.hour),before=sample(state.hour-.04).tide,after=sample(state.hour+.04).tide,d=directions(state.hour),pct=Math.round(Math.max(0,Math.min(1,(q.tide+1)/2))*100),day=q.light>.18?"낮":q.light>-.08?"박명":"밤";
+ const trendText=Math.abs(after-before)<.002?"변화 전환점":after>before?"상승 중":"하강 중",levelText=pct>=68?"높은 편":pct<=34?"낮은 편":"중간 수위",separation=Math.acos(Math.min(1,Math.abs(d.sun.dot(d.moon))))/DEG,alignment=separation<18?"일렬에 가까움":separation>72?"직각에 가까움":"엇갈린 배치",rangeText=separation<18?"조차가 커짐":separation>72?"조차가 작아짐":"중간 조차";
+ $("time").textContent=$("statusTime").textContent=fmt(state.hour);$("timeRange").value=state.hour;$("level").textContent=levelText;$("meter").style.width=pct+"%";$("trend").textContent=trendText;$("dayLabel").textContent=day;$("sunState").style.background=day==="낮"?"#f1c969":day==="박명"?"#ff7557":"#0d1921";$("alignmentResult").textContent=alignment;$("bulgeResult").textContent=rangeText;$("localResult").textContent=`${levelText} · ${trendText}`;
+ moon.position.copy(d.moon).multiplyScalar(4.2);sun.position.copy(d.sun).multiplyScalar(8);light.position.copy(sun.position);const normal=vec(state.lat,state.lon);avatar.position.copy(normal).multiplyScalar(1.07);avatar.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),normal);deform(d)}
+function positionObjectLabel(id,object,visible){const label=$(id);if(!visible){label.style.display="none";return}const projected=object.getWorldPosition(new THREE.Vector3()).project(camera),inside=projected.z>-1&&projected.z<1&&Math.abs(projected.x)<1.08&&Math.abs(projected.y)<1.08;if(!inside){label.style.display="none";return}label.style.display="grid";label.style.left=`${(projected.x*.5+.5)*host.clientWidth}px`;label.style.top=`${(-projected.y*.5+.5)*host.clientHeight-28}px`}
+function render(){controls.update();renderer.render(scene,camera);positionObjectLabel("sunLabel",sun,currentView==="system");positionObjectLabel("moonLabel",moon,currentView==="system");positionObjectLabel("avatarLabel",avatar,currentView==="earth")}
+let last=performance.now(),chartClock=0;function loop(now){const dt=Math.min((now-last)/1000,.1);last=now;if(state.playing)state.hour=(state.hour+dt*state.speed)%24;update();render();chartClock+=dt;if(chartClock>.18){drawChart();chartClock=0}requestAnimationFrame(loop)}requestAnimationFrame(loop);
+
+const now=new Date(),localDate=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;state.date=localDate;$("date").value=localDate;
+function applyToday(){const current=new Date(),currentDate=`${current.getFullYear()}-${pad(current.getMonth()+1)}-${pad(current.getDate())}`;state.date=currentDate;state.hour=current.getHours()+current.getMinutes()/60+current.getSeconds()/3600;state.todayEpoch=current.getTime()-state.hour*3600000;state.todayMode=true;state.sunOffset=0;state.moonOffset=0;state.playing=false;$("date").value=currentDate;$("play").textContent="▶";$("todayButton").classList.add("active");$("todayButton").textContent="오늘 위치 적용됨";$("condition").textContent="오늘의 실제 배치";$("findingText").textContent="현재 시각의 태양과 달 방향을 지구 고정 좌표계에 적용했습니다.";showDragToast(`오늘 ${fmt(state.hour)}의 해·달 위치를 적용했습니다`);setTimeout(()=>showDragToast("",false),1800);drawChart();update()}
+$("todayButton").onclick=applyToday;
+$("play").onclick=()=>{state.playing=!state.playing;$("play").textContent=state.playing?"Ⅱ":"▶"};
+$("timeRange").oninput=e=>{state.hour=+e.target.value;state.playing=false;$("play").textContent="▶";drawChart()};$("speed").onchange=e=>state.speed=+e.target.value;
+$("location").onchange=e=>{const [lat,lon,name]=e.target.value.split(",");state.lat=+lat;state.lon=+lon;state.name=name;$("lat").value=lat;$("lon").value=lon;syncPlace()};
+function syncPlace(){$("placeName").textContent=$("chartPlace").textContent=state.name;$("placeCoords").textContent=`${state.lat.toFixed(2)}°, ${state.lon.toFixed(2)}°`;drawChart()}
+$("lat").onchange=e=>{state.lat=Math.max(-90,Math.min(90,+e.target.value));state.name="사용자 지정";syncPlace()};$("lon").onchange=e=>{state.lon=Math.max(-180,Math.min(180,+e.target.value));state.name="사용자 지정";syncPlace()};$("date").onchange=e=>{if(e.target.value){state.date=e.target.value;state.todayMode=false;$("todayButton").classList.remove("active");$("todayButton").textContent="오늘의 해·달";drawChart()}};
+$("geo").onclick=()=>navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>{state.lat=p.coords.latitude;state.lon=p.coords.longitude;state.name="내 위치";$("lat").value=state.lat.toFixed(4);$("lon").value=state.lon.toFixed(4);syncPlace()},()=>alert("위치 권한을 사용할 수 없습니다.")):alert("위치 기능을 지원하지 않는 브라우저입니다.");
+$("moonToggle").onclick=e=>{state.moon=!state.moon;e.currentTarget.classList.toggle("on",state.moon);drawChart()};$("sunToggle").onclick=e=>{state.sun=!state.sun;e.currentTarget.classList.toggle("on",state.sun);drawChart()};
+document.querySelectorAll("[data-phase]").forEach(b=>b.onclick=()=>{state.todayMode=false;$("todayButton").classList.remove("active");$("todayButton").textContent="오늘의 해·달";state.phase=+b.dataset.phase;state.moonOffset=state.sunOffset+state.hour/24*360-state.hour/lunarDay*360;document.querySelectorAll("[data-phase]").forEach(x=>x.classList.toggle("on",x===b));$("condition").textContent=state.phase===0?"사리":state.phase===.25?"조금":"중간 조차";$("findingText").textContent=state.phase===0?"달과 태양의 효과가 같은 축에서 더해집니다.":state.phase===.25?"달과 태양의 효과가 직각 방향으로 분산됩니다.":"사리와 조금 사이의 조차를 관찰합니다.";drawChart()});
+$("bulge").oninput=e=>{state.bulge=+e.target.value;document.querySelector(".scale").textContent=`조석 변형 ${Math.round(state.bulge*1000)}× 시각 강조`};
+let currentView="system",dragMode=null;
+const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2(),orbitPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0),dragPoint=new THREE.Vector3(),earthSphere=new THREE.Sphere(new THREE.Vector3(),1);
+const wrap01=value=>((value%1)+1)%1;
+function setPointer(event){const rect=renderer.domElement.getBoundingClientRect();pointer.x=(event.clientX-rect.left)/rect.width*2-1;pointer.y=-(event.clientY-rect.top)/rect.height*2+1;raycaster.setFromCamera(pointer,camera)}
+function pauseForDrag(){state.playing=false;$("play").textContent="▶"}
+function showDragToast(text,show=true){$("dragToast").textContent=text;$("dragToast").classList.toggle("show",show)}
+function pickDragTarget(event){setPointer(event);const targets=currentView==="earth"?[markerHit,earth]:[moon,sun],hits=raycaster.intersectObjects(targets,false);if(!hits.length)return null;const object=hits[0].object;return object===sun?"sun":object===moon?"moon":object===markerHit||object===earth?"avatar":null}
+renderer.domElement.addEventListener("pointerdown",event=>{const target=pickDragTarget(event);if(!target)return;event.preventDefault();dragMode=target;pauseForDrag();controls.enabled=false;renderer.domElement.style.cursor="grabbing";try{renderer.domElement.setPointerCapture(event.pointerId)}catch{}showDragToast(target==="sun"?"태양을 움직여 낮과 밤을 바꿔보세요":target==="moon"?"달을 움직여 조차를 바꿔보세요":"아바타를 지구 위 원하는 위치로 옮기세요");if(target==="avatar"&&raycaster.ray.intersectSphere(earthSphere,dragPoint)){dragPoint.normalize();state.lat=Math.asin(dragPoint.y)/DEG;state.lon=Math.atan2(dragPoint.z,dragPoint.x)/DEG;state.name="사용자 지정";$("lat").value=state.lat.toFixed(4);$("lon").value=state.lon.toFixed(4);syncPlace()}},{capture:true});
+renderer.domElement.addEventListener("pointermove",event=>{setPointer(event);if(!dragMode){renderer.domElement.style.cursor=pickDragTarget(event)?"grab":"default";return}event.preventDefault();
+ if(dragMode==="sun"||dragMode==="moon"){if(!raycaster.ray.intersectPlane(orbitPlane,dragPoint))return;const longitude=Math.atan2(dragPoint.z,dragPoint.x)/DEG,currentDirection=directions(state.hour)[dragMode],currentLongitude=Math.atan2(currentDirection.z,currentDirection.x)/DEG,delta=wrap180(longitude-currentLongitude);if(dragMode==="sun")state.sunOffset+=delta;else state.moonOffset+=delta;document.querySelectorAll("[data-phase]").forEach(button=>button.classList.remove("on"));$("condition").textContent=state.todayMode?"오늘 기준 직접 조정":"직접 배치";$("findingText").textContent=dragMode==="sun"?"태양만 이동했습니다. 달의 위치는 그대로 유지됩니다.":"달만 이동했습니다. 태양의 위치는 그대로 유지됩니다."}
+ if(dragMode==="avatar"){if(!raycaster.ray.intersectSphere(earthSphere,dragPoint))return;dragPoint.normalize();state.lat=Math.asin(dragPoint.y)/DEG;state.lon=Math.atan2(dragPoint.z,dragPoint.x)/DEG;state.name="사용자 지정";$("lat").value=state.lat.toFixed(4);$("lon").value=state.lon.toFixed(4);syncPlace()}
+ drawChart()
+});
+function finishDrag(event){if(!dragMode)return;dragMode=null;controls.enabled=true;renderer.domElement.style.cursor="grab";showDragToast("",false);try{renderer.domElement.releasePointerCapture(event.pointerId)}catch{}drawChart()}
+renderer.domElement.addEventListener("pointerup",finishDrag);renderer.domElement.addEventListener("pointercancel",finishDrag);
+function setPanel(open){$("panel").classList.toggle("open",open);$("panelToggle").setAttribute("aria-expanded",String(open))}
+$("panelToggle").onclick=()=>setPanel(!$("panel").classList.contains("open"));$("panelClose").onclick=()=>setPanel(false);window.addEventListener("keydown",event=>{if(event.key==="Escape")setPanel(false)});
+function view(mode){currentView=mode;const earthMode=mode==="earth";$("earthView").classList.toggle("on",earthMode);$("systemView").classList.toggle("on",!earthMode);camera.position.set(...(earthMode?[.2,1.2,4.6]:[0,6.4,10.8]));controls.target.set(0,0,0);controls.update();$("stageGuide").textContent=earthMode?"지구 표면을 클릭하거나 아바타를 드래그해 위치를 정하세요":"태양이나 달을 잡아 궤도 위로 옮겨보세요";$("directHint").innerHTML=earthMode?"<b>직접 조작</b><span>지구를 클릭하거나 사람 아바타를 드래그</span>":"<b>직접 조작</b><span>☀ 태양 · ● 달을 궤도 위에서 드래그</span>"}
+$("earthView").onclick=()=>view("earth");$("systemView").onclick=()=>view("system");view("system");drawChart();
+</script>
+</body>
+</html>
