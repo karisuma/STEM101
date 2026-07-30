@@ -5,7 +5,9 @@ import {
   BackSide,
   Color,
   DoubleSide,
+  MOUSE,
   ShaderMaterial,
+  TOUCH,
   Vector3,
 } from "three";
 import {
@@ -125,6 +127,24 @@ function CameraRig({
       camera.position.copy(cameraPreset.position);
       moving.current = false;
     }
+  });
+
+  return null;
+}
+
+function ActualScaleNearPlane({ enabled }: { enabled: boolean }) {
+  const { camera } = useThree();
+
+  useFrame(() => {
+    if (!enabled) return;
+    const distanceFromOrbitPlane = Math.hypot(
+      camera.position.y,
+      camera.position.z,
+    );
+    const near = Math.max(0.000001, distanceFromOrbitPlane / 2000);
+    if (Math.abs(camera.near - near) < near * 0.04) return;
+    camera.near = near;
+    camera.updateProjectionMatrix();
   });
 
   return null;
@@ -415,6 +435,13 @@ function SceneContent({
         scaleMode={scaleMode}
         scaleFocus={scaleFocus}
       />
+      <ActualScaleNearPlane
+        enabled={
+          viewMode === "system" &&
+          scaleMode === "actual" &&
+          frameMode === "helio"
+        }
+      />
       <color attach="background" args={["#050b11"]} />
       <fog attach="fog" args={["#050b11", 10, 22]} />
       <ambientLight intensity={0.1} />
@@ -545,7 +572,43 @@ function SceneContent({
 
       <OrbitControls
         makeDefault
-        enablePan={false}
+        enablePan={
+          viewMode === "system" &&
+          scaleMode === "actual" &&
+          frameMode === "helio"
+        }
+        enableRotate={
+          !(
+            viewMode === "system" &&
+            scaleMode === "actual" &&
+            frameMode === "helio"
+          )
+        }
+        screenSpacePanning
+        zoomToCursor={
+          viewMode === "system" &&
+          scaleMode === "actual" &&
+          frameMode === "helio"
+        }
+        mouseButtons={{
+          LEFT:
+            viewMode === "system" &&
+            scaleMode === "actual" &&
+            frameMode === "helio"
+              ? MOUSE.PAN
+              : MOUSE.ROTATE,
+          MIDDLE: MOUSE.DOLLY,
+          RIGHT: MOUSE.PAN,
+        }}
+        touches={{
+          ONE:
+            viewMode === "system" &&
+            scaleMode === "actual" &&
+            frameMode === "helio"
+              ? TOUCH.PAN
+              : TOUCH.ROTATE,
+          TWO: TOUCH.DOLLY_PAN,
+        }}
         target={
           scaleMode === "actual" &&
           frameMode === "helio" &&
@@ -559,20 +622,12 @@ function SceneContent({
         }
         minDistance={
           scaleMode === "actual" && frameMode === "helio"
-            ? scaleFocus === "sun"
-              ? 0.12
-              : scaleFocus === "earthmoon"
-                ? 0.045
-                : 5
+            ? 0.00002
             : 2.8
         }
         maxDistance={
           scaleMode === "actual" && frameMode === "helio"
-            ? scaleFocus === "sun"
-              ? 1.5
-              : scaleFocus === "earthmoon"
-                ? 0.5
-                : 24
+            ? 24
             : scaleMode === "actual"
               ? 24
               : 16
