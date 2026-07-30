@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "tide-sim",
+  "title": "조석 시뮬레이터 만들기",
+  "level": "middle",
+  "recommendedGrades": ["중1", "중2"],
+  "subjects": ["과학", "지구과학"],
+  "difficulty": "보통",
+  "durationMinutes": 15,
+  "learningGoals": [
+    "조석에 영향을 주는 변수를 정하고 시뮬레이터로 표현한다.",
+    "천체의 상대적 위치에 따른 결과를 예상하고 테스트한다.",
+    "테스트 결과를 바탕으로 모형을 수정하고 조석의 원리를 설명한다."
+  ],
+  "projectType": "vibe-coding",
+  "makingProcess": ["질문하기", "바이브코딩", "테스트하기", "설명하기"],
+  "parentPrompts": [
+    "달과 태양이 일직선에 가까워질 때 수위 변화는 어떻게 달라졌나요?",
+    "제주에서 실제 밀물과 썰물 시간을 확인하면 시뮬레이션과 어떤 차이가 있나요?"
+  ],
+  "entry": "index.html"
+}
