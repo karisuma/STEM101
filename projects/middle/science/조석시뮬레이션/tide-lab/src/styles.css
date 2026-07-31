@@ -1391,3 +1391,23 @@ input[type="number"] {
     transition-duration: 0.01ms !important;
   }
 }
+.sun-size-reference-label {
+  display: grid;
+  gap: 3px;
+  min-width: 150px;
+  padding-left: 12px;
+  border-left: 1px solid rgb(241 201 105 / 40%);
+  color: #8f875f;
+  font-size: 9px;
+  line-height: 1.45;
+  pointer-events: none;
+}
+
+.sun-size-reference-label strong {
+  color: #d8bd72;
+  font-size: 10px;
+}
+
+.sun-size-reference-label span {
+  white-space: nowrap;
+}

@@ -1,10 +1,11 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Line, OrbitControls, Stars } from "@react-three/drei";
+import { Html, Line, OrbitControls, Stars } from "@react-three/drei";
 import { useEffect, useMemo, useRef } from "react";
 import {
   BackSide,
   Color,
   DoubleSide,
+  Group,
   MOUSE,
   ShaderMaterial,
   TOUCH,
@@ -352,6 +353,49 @@ function Earth({
   );
 }
 
+function SunSizeReference() {
+  const group = useRef<Group>(null);
+
+  useFrame(({ camera }) => {
+    group.current?.quaternion.copy(camera.quaternion);
+  });
+
+  return (
+    <>
+      <group ref={group} position={[-15, 0, 0]}>
+        <mesh>
+          <circleGeometry args={[10.91, 160]} />
+          <meshBasicMaterial
+            color="#f1c969"
+            transparent
+            opacity={0.025}
+            depthTest={false}
+            depthWrite={false}
+            side={DoubleSide}
+          />
+        </mesh>
+        <mesh>
+          <ringGeometry args={[10.76, 10.91, 160]} />
+          <meshBasicMaterial
+            color="#f1c969"
+            transparent
+            opacity={0.18}
+            depthTest={false}
+            depthWrite={false}
+            side={DoubleSide}
+          />
+        </mesh>
+      </group>
+      <Html position={[-4.25, 1.55, 0]} center>
+        <div className="sun-size-reference-label">
+          <strong>태양 실제 크기 참고</strong>
+          <span>전체 지름 = 지구 약 109개</span>
+        </div>
+      </Html>
+    </>
+  );
+}
+
 function SceneContent({
   hour,
   date,
@@ -460,6 +504,8 @@ function SceneContent({
         fade
         speed={0.18}
       />
+
+      {!surfaceMode && !learning && geo ? <SunSizeReference /> : null}
 
       {learning && geo ? (
         <Line
