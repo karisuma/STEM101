@@ -13,6 +13,19 @@
       "technology": "React · TypeScript · Three.js",
       "summary": "태양·지구·달의 상대적인 움직임과 관측 지점의 낮밤 및 조석 변화를 확인하는 시뮬레이터",
       "entry": "projects/middle/science/조석시뮬레이션/tide-lab-static/"
+    },
+    {
+      "id": "projectile-lab",
+      "title": "포물선 운동 실험",
+      "level": "middle",
+      "gradeLabel": "초등 고학년 · 중학교",
+      "subject": "science",
+      "subjectLabel": "수학 · 과학",
+      "status": "in-progress",
+      "statusLabel": "MVP 구현 중",
+      "technology": "React · TypeScript · SVG",
+      "summary": "발사각을 바꾸어 궤적과 비행거리를 비교하고, 수업 미션별 익명 통계 데모를 확인하는 디지털 교구",
+      "entry": "projects/middle/science/포물선운동/projectile-lab-static/"
     }
   ]
 }
