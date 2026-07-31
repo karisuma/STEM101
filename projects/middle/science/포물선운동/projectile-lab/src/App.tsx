@@ -1,194 +1,134 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import TeacherInsights from "./components/TeacherInsights";
-import TrajectoryCanvas from "./components/TrajectoryCanvas";
-import {
-  DEFAULT_SETTINGS,
-  formatNumber,
-  getMission,
-  simulateFlight,
-  TARGET_DISTANCE,
-  type Flight,
-  type MissionId,
-} from "./simulation/model";
+import TelemetryChart, { type GraphMode } from "./components/TelemetryChart";
+import TrajectoryCanvas, { type RecordedFlight } from "./components/TrajectoryCanvas";
+import { DEFAULT_SETTINGS, formatNumber, GRAVITY_PRESETS, simulateFlight, type LaunchSettings } from "./simulation/model";
 
-const predictionOptions = [30, 45, 60];
-const missions: MissionId[] = ["farthest", "complementary", "target"];
+const RECORD_COLORS = ["#b581ff", "#f5c84a", "#ff7f6b", "#74d7ff", "#8de0ac", "#f493d0"];
 
 export default function App() {
-  const [mission, setMission] = useState<MissionId>("farthest");
-  const [angle, setAngle] = useState(45);
-  const [prediction, setPrediction] = useState<number | null>(null);
-  const [previousFlight, setPreviousFlight] = useState<Flight | null>(null);
-  const [lastFlight, setLastFlight] = useState<Flight | null>(null);
+  const [settings, setSettings] = useState<LaunchSettings>(DEFAULT_SETTINGS);
+  const [recordedFlights, setRecordedFlights] = useState<RecordedFlight[]>([]);
   const [progress, setProgress] = useState(1);
-  const [isFlying, setIsFlying] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [teacherMode, setTeacherMode] = useState(false);
-  const [showInsights, setShowInsights] = useState(false);
-  const [message, setMessage] = useState("먼저 결과를 예상하고, 각도를 바꾸어 발사해 보세요.");
+  const [isRunning, setIsRunning] = useState(false);
+  const [showVelocity, setShowVelocity] = useState(true);
+  const [graphMode, setGraphMode] = useState<GraphMode>("range");
+  const [message, setMessage] = useState("조건을 바꾸고 발사하세요. 궤적을 기록하면 여러 실험을 겹쳐 볼 수 있어요.");
   const animationStart = useRef<number | null>(null);
-
-  const flight = useMemo(
-    () => simulateFlight({ ...DEFAULT_SETTINGS, angle }),
-    [angle],
-  );
-  const missionInfo = getMission(mission);
-  const targetError = Math.abs(flight.distance - TARGET_DISTANCE);
+  const progressRef = useRef(1);
+  const flight = useMemo(() => simulateFlight(settings), [settings]);
 
   useEffect(() => {
-    if (!isFlying) return;
+    if (!isRunning) return;
     let frame = 0;
     const animate = (now: number) => {
-      if (!animationStart.current) animationStart.current = now;
-      const next = Math.min(1, (now - animationStart.current) / 1100);
+      if (animationStart.current === null) animationStart.current = now - progressRef.current * 1_650;
+      const next = Math.min(1, (now - animationStart.current) / 1_650);
+      progressRef.current = next;
       setProgress(next);
       if (next < 1) frame = requestAnimationFrame(animate);
       else {
-        setIsFlying(false);
+        setIsRunning(false);
         animationStart.current = null;
-        setMessage(
-          mission === "target"
-            ? targetError < 0.6
-              ? "목표에 아주 가깝게 도착했어요. 이제 제출해 보세요."
-              : `목표와 ${formatNumber(targetError)} m 차이예요. 각도를 다시 조절해 볼까요?`
-            : "결과가 나왔어요. 이전 실험과 비교해 보고 이유를 설명해 보세요.",
-        );
+        setMessage("착지했어요. 현재 결과를 기록하거나 조건을 바꿔 다음 발사를 해 보세요.");
       }
     };
     frame = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(frame);
-  }, [isFlying, mission, targetError]);
+  }, [isRunning]);
 
-  const switchMission = (nextMission: MissionId) => {
-    setMission(nextMission);
-    setAngle(nextMission === "complementary" ? 30 : 45);
-    setPrediction(null);
-    setPreviousFlight(null);
-    setLastFlight(null);
+  const updateSetting = <K extends keyof LaunchSettings>(key: K, value: LaunchSettings[K]) => {
+    setSettings((current) => ({ ...current, [key]: value }));
     setProgress(1);
-    setSubmitted(false);
-    setShowInsights(false);
-    setMessage(getMission(nextMission).prompt);
+    progressRef.current = 1;
+    setIsRunning(false);
+    animationStart.current = null;
   };
 
   const launch = () => {
-    if (isFlying) return;
-    if (lastFlight) setPreviousFlight(lastFlight);
-    setLastFlight(flight);
-    setSubmitted(false);
+    if (isRunning) return;
     setProgress(0);
-    setIsFlying(true);
-    setMessage("발사 중이에요. 궤적과 수치를 관찰해 보세요.");
+    progressRef.current = 0;
+    animationStart.current = null;
+    setIsRunning(true);
+    setMessage("발사 중입니다. 속도 벡터와 궤적의 변화를 관찰해 보세요.");
   };
 
-  const compareComplementary = () => {
-    if (mission !== "complementary") return;
-    setPreviousFlight(simulateFlight({ ...DEFAULT_SETTINGS, angle: 90 - angle }));
+  const saveFlight = (nextSettings = settings, label?: string) => {
+    const nextFlight = simulateFlight(nextSettings);
+    setRecordedFlights((current) => [
+      ...current.slice(-5),
+      {
+        id: `${Date.now()}-${current.length}`,
+        label: label ?? `${nextSettings.angle}° · ${nextSettings.speed} m/s`,
+        color: RECORD_COLORS[current.length % RECORD_COLORS.length],
+        flight: nextFlight,
+        visible: true,
+      },
+    ]);
     setProgress(1);
-    setMessage(`${angle}°와 ${90 - angle}°의 궤적을 겹쳐 보세요. 도달 거리는 같은가요?`);
+    progressRef.current = 1;
+    setMessage("현재 조건을 비교 기록에 남겼어요. 다른 조건과 궤적을 겹쳐 보세요.");
   };
 
-  const submit = () => {
-    if (!prediction) {
-      setMessage("먼저 30°, 45°, 60° 중 하나를 예상으로 선택해 주세요.");
-      return;
-    }
-    if (progress < 1) {
-      setMessage("발사가 끝난 뒤 결과를 확인하고 제출해 주세요.");
-      return;
-    }
-    setSubmitted(true);
-    setShowInsights(true);
-    setMessage("제출했어요. 교사 인사이트에서 학급의 익명 결과와 비교해 보세요.");
+  const loadComparison = (kind: "angles" | "drag" | "gravity") => {
+    const variants = kind === "angles"
+      ? [30, 45, 60].map((angle) => ({ ...settings, angle }))
+      : kind === "drag"
+        ? [{ ...settings, airResistance: false, drag: 0 }, { ...settings, airResistance: true, drag: Math.max(settings.drag, 0.045) }]
+        : GRAVITY_PRESETS.slice(0, 3).map((preset) => ({ ...settings, gravity: preset.gravity }));
+    const labels = kind === "angles"
+      ? ["30° 발사", "45° 발사", "60° 발사"]
+      : kind === "drag"
+        ? ["공기 저항 없음", "공기 저항 적용"]
+        : ["달 중력", "화성 중력", "지구 중력"];
+    setRecordedFlights(variants.map((variant, index) => ({
+      id: `${kind}-${index}`,
+      label: labels[index],
+      color: RECORD_COLORS[index],
+      flight: simulateFlight(variant),
+      visible: true,
+    })));
+    setProgress(1);
+    progressRef.current = 1;
+    setMessage(kind === "angles" ? "세 발사각의 궤적을 겹쳤어요." : kind === "drag" ? "공기 저항 전후의 궤적을 겹쳤어요." : "행성별 중력의 차이를 같은 조건으로 겹쳤어요.");
   };
 
-  return (
-    <main className="app-shell">
-      <header className="site-header">
-        <a className="brand" href="../../../../index.html" aria-label="STEM101 프로젝트 목록으로 이동">STEM101</a>
-        <div className="title-group">
-          <h1>포물선 운동 실험</h1>
-          <span>{missionInfo.number} / 3 · {missionInfo.title}</span>
-        </div>
-        <div className="header-actions">
-          <label className="teacher-switch">
-            <input type="checkbox" checked={teacherMode} onChange={(event) => { setTeacherMode(event.target.checked); setShowInsights(event.target.checked); }} />
-            <span aria-hidden="true" />
-            교사용 시연
-          </label>
-          <button className="help-button" type="button" aria-label="수업 도움말" title="발사각만 바꿔 비교해 보세요.">?</button>
-        </div>
-      </header>
+  const currentPoint = flight.trajectory[Math.round((flight.trajectory.length - 1) * progress)];
 
-      <section className="workspace">
-        <section className="simulation-panel" aria-label="포물선 운동 시뮬레이션">
-          <div className="canvas-toolbar">
-            <div className="trajectory-key"><span className="key-current" />현재 실험 ({angle}°)</div>
-            {previousFlight && <div className="trajectory-key"><span className="key-previous" />비교 실험</div>}
-            <button type="button" className="reset-button" onClick={() => { setAngle(45); setPreviousFlight(null); setLastFlight(null); setProgress(1); setSubmitted(false); setMessage("조건을 초기화했어요. 다시 예상하고 실험해 보세요."); }}>초기화</button>
-          </div>
-          <div className="canvas-frame">
-            <TrajectoryCanvas flight={flight} previousFlight={previousFlight} progress={progress} showTarget={mission === "target"} />
-          </div>
-          <div className="stepper" aria-label="탐구 진행 단계">
-            {[["예상", 1], ["실험", 2], ["비교", 3], ["설명", 4]].map(([label, order]) => {
-              const active = submitted ? 4 : isFlying ? 2 : previousFlight ? 3 : prediction ? 2 : 1;
-              return <div className={Number(order) <= active ? "step is-active" : "step"} key={String(label)}><b>{order}</b><span>{label}</span></div>;
-            })}
-          </div>
-          <p className="experiment-message" role="status">{message}</p>
-          {showInsights && <TeacherInsights mission={mission} submitted={submitted} prediction={prediction} angle={angle} close={() => setShowInsights(false)} />}
-        </section>
+  return <main className="app-shell">
+    <header className="site-header">
+      <a className="brand" href="../../../../index.html" aria-label="STEM101 프로젝트 목록으로 이동">STEM101</a>
+      <div className="title-group"><h1>포물선 운동 시뮬레이션 실험실</h1><span>발사 조건을 바꾸고 움직임을 관찰하세요.</span></div>
+      <div className="header-actions"><button className="header-reset" type="button" onClick={() => { setSettings(DEFAULT_SETTINGS); setRecordedFlights([]); setProgress(1); progressRef.current = 1; setIsRunning(false); setMessage("모든 조건과 기록을 초기화했습니다."); }}>새 실험 시작</button></div>
+    </header>
 
-        <aside className="control-rail" aria-label="실험 조절 패널">
-          <nav className="mission-tabs" aria-label="수업 미션">
-            {missions.map((item) => (
-              <button type="button" key={item} className={item === mission ? "selected" : ""} onClick={() => switchMission(item)}>
-                미션 {getMission(item).number}
-              </button>
-            ))}
-          </nav>
-          <div className="question-block">
-            <h2>{missionInfo.prompt}</h2>
-            <p>같은 초기 속도, 같은 중력, 같은 발사·착지 높이에서 비교합니다.</p>
-          </div>
+    <section className="workspace">
+      <aside className="control-rail" aria-label="발사 조건 조절">
+        <h2>발사 조건</h2>
+        <label className="slider-control"><span>발사 각도 <strong>{settings.angle}°</strong></span><input type="range" min="5" max="85" value={settings.angle} onChange={(event) => updateSetting("angle", Number(event.target.value))} /></label>
+        <label className="slider-control"><span>초기 속도 <strong>{settings.speed.toFixed(1)} m/s</strong></span><input type="range" min="5" max="32" step="0.5" value={settings.speed} onChange={(event) => updateSetting("speed", Number(event.target.value))} /></label>
+        <label className="slider-control"><span>발사 높이 <strong>{settings.startHeight.toFixed(1)} m</strong></span><input type="range" min="0" max="8" step="0.5" value={settings.startHeight} onChange={(event) => updateSetting("startHeight", Number(event.target.value))} /></label>
+        <label className="select-control"><span>중력 환경</span><select value={settings.gravity} onChange={(event) => updateSetting("gravity", Number(event.target.value))}>{GRAVITY_PRESETS.map((preset) => <option key={preset.id} value={preset.gravity}>{preset.label} · {preset.gravity} m/s²</option>)}</select></label>
+        <label className="slider-control"><span>바람 <strong>{settings.wind > 0 ? "+" : ""}{settings.wind.toFixed(1)} m/s</strong></span><input type="range" min="-12" max="12" step="0.5" value={settings.wind} onChange={(event) => updateSetting("wind", Number(event.target.value))} /></label>
+        <label className="toggle-control"><span>공기 저항</span><input type="checkbox" checked={settings.airResistance} onChange={(event) => updateSetting("airResistance", event.target.checked)} /><i /></label>
+        {settings.airResistance ? <label className="slider-control compact"><span>저항 계수 <strong>{settings.drag.toFixed(3)}</strong></span><input type="range" min="0.01" max="0.12" step="0.005" value={settings.drag} onChange={(event) => updateSetting("drag", Number(event.target.value))} /></label> : null}
+        <section className="comparison-presets"><h3>비교 장면</h3><button type="button" onClick={() => loadComparison("angles")}>30° · 45° · 60° 겹치기</button><button type="button" onClick={() => loadComparison("drag")}>공기 저항 전후 보기</button><button type="button" onClick={() => loadComparison("gravity")}>행성 중력 비교</button></section>
+      </aside>
 
-          <fieldset className="prediction-field">
-            <legend>예상 선택</legend>
-            <div className="prediction-options">
-              {predictionOptions.map((option) => <button type="button" key={option} className={prediction === option ? "selected" : ""} onClick={() => { setPrediction(option); setMessage(`${option}°를 예상으로 골랐어요. 발사해 확인해 보세요.`); }}>{option}°</button>)}
-            </div>
-          </fieldset>
-
-          <section className="angle-control">
-            <div><span>발사 각도</span><strong>{angle}°</strong></div>
-            <input type="range" min="15" max="75" step="1" value={angle} onChange={(event) => { setAngle(Number(event.target.value)); setProgress(1); setSubmitted(false); }} aria-label="발사 각도" />
-            <div className="range-ends"><span>15°</span><span>75°</span></div>
-          </section>
-
-          <section className="metrics" aria-label="실험 결과">
-            <div><span>수평 도달 거리</span><strong>{formatNumber(flight.distance)} m</strong></div>
-            <div><span>최고 높이</span><strong>{formatNumber(flight.peakHeight)} m</strong></div>
-            <div><span>공중 체류 시간</span><strong>{formatNumber(flight.duration, 2)} s</strong></div>
-            {mission === "target" && <div><span>목표와의 차이</span><strong>{formatNumber(targetError)} m</strong></div>}
-          </section>
-
-          <div className="control-actions">
-            <button className="secondary-action" type="button" onClick={mission === "complementary" ? compareComplementary : () => { setPreviousFlight(flight); setLastFlight(flight); setMessage("현재 궤적을 비교 실험으로 남겼어요. 각도를 바꾸어 다시 발사해 보세요."); }}>
-              {mission === "complementary" ? "보완각 궤적 비교" : "현재 실험을 비교 기준으로"}
-            </button>
-            <button className="launch-action" type="button" onClick={launch} disabled={isFlying}>{isFlying ? "발사 중…" : "발사하기"}</button>
-            <button className="submit-action" type="button" onClick={submit}>{missionInfo.action}</button>
-          </div>
-
-          <section className="teacher-note">
-            <strong>{teacherMode ? "교사용 발문" : "탐구 도움말"}</strong>
-            <p>{teacherMode ? "정답을 먼저 말하지 말고, 30°와 60°의 높이·시간·거리를 각각 비교하게 하세요." : "한 번에 한 조건만 바꾸고, 이전 궤적과 차이를 관찰해 보세요."}</p>
-          </section>
-        </aside>
+      <section className="simulation-panel" aria-label="포물선 운동 시뮬레이션">
+        <div className="canvas-toolbar"><div className="trajectory-key"><span className="key-current" />현재 발사</div>{recordedFlights.filter((record) => record.visible).map((record) => <div className="trajectory-key record-key" key={record.id}><span style={{ background: record.color }} />{record.label}</div>)}<label className="vector-toggle"><input type="checkbox" checked={showVelocity} onChange={(event) => setShowVelocity(event.target.checked)} />속도 벡터</label></div>
+        <div className="canvas-frame"><TrajectoryCanvas flight={flight} recordedFlights={recordedFlights} progress={progress} showVelocity={showVelocity} /></div>
+        <div className="launch-bar"><button className="launch-action" type="button" onClick={launch}>{isRunning ? "발사 중…" : progress < 1 ? "계속 보기" : "발사하기"}</button><button className="secondary-action" type="button" onClick={() => { setIsRunning(false); animationStart.current = null; }}>일시정지</button><button className="secondary-action" type="button" onClick={() => { setProgress(0); progressRef.current = 0; animationStart.current = null; setIsRunning(false); }}>처음으로</button><p role="status">{message}</p></div>
+        <section className="run-history" aria-label="비교 기록"><div className="history-head"><h2>비교 기록</h2><button type="button" onClick={() => setRecordedFlights([])}>기록 비우기</button></div>{recordedFlights.length === 0 ? <p>현재 발사를 기록한 뒤 조건을 바꾸어 궤적을 겹쳐 보세요.</p> : <div className="run-list">{recordedFlights.map((record) => <label className="run-chip" key={record.id}><input type="checkbox" checked={record.visible} onChange={() => setRecordedFlights((current) => current.map((item) => item.id === record.id ? { ...item, visible: !item.visible } : item))} /><i style={{ background: record.color }} /><span>{record.label}</span><small>{formatNumber(record.flight.distance)} m</small></label>)}</div>}<button className="save-run" type="button" onClick={() => saveFlight()}>현재 조건 기록하기</button></section>
       </section>
 
-      <footer className="model-note">이 시뮬레이션은 공기 저항을 계산하지 않는 개념 모델입니다. 실제 공의 움직임은 바람·회전·공기 저항에 따라 달라질 수 있습니다.</footer>
-    </main>
-  );
+      <aside className="data-rail" aria-label="운동 데이터">
+        <section className="live-metrics"><h2>현재 값</h2><div><span>도달 거리</span><strong>{formatNumber(flight.distance)} m</strong></div><div><span>최고 높이</span><strong>{formatNumber(flight.peakHeight)} m</strong></div><div><span>비행 시간</span><strong>{formatNumber(flight.duration, 2)} s</strong></div><div><span>현재 속력</span><strong>{formatNumber(currentPoint?.speed ?? 0)} m/s</strong></div></section>
+        <div className="graph-tabs" role="group" aria-label="그래프 선택">{(["range", "height", "speed"] as GraphMode[]).map((mode) => <button key={mode} type="button" className={graphMode === mode ? "selected" : ""} onClick={() => setGraphMode(mode)}>{mode === "range" ? "각도·거리" : mode === "height" ? "높이·시간" : "속력·시간"}</button>)}</div>
+        <TelemetryChart flight={flight} settings={settings} mode={graphMode} />
+        <section className="observation-note"><h2>관찰하기</h2><p>한 번에 하나의 조건을 바꾸고 기록하세요. 같은 시간에 높이, 속도, 착지 위치가 어떻게 달라지는지 궤적과 그래프를 함께 보면 됩니다.</p></section>
+      </aside>
+    </section>
+    <footer className="model-note">공기 저항은 속도의 제곱에 비례하는 간단한 모델로 계산합니다. 실제 공의 회전, 모양, 공기 밀도 변화는 포함하지 않습니다.</footer>
+  </main>;
 }

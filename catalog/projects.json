@@ -16,7 +16,7 @@
     },
     {
       "id": "projectile-lab",
-      "title": "포물선 운동 실험",
+      "title": "포물선 운동 시뮬레이션",
       "level": "middle",
       "gradeLabel": "초등 고학년 · 중학교",
       "subject": "science",
@@ -24,7 +24,7 @@
       "status": "in-progress",
       "statusLabel": "MVP 구현 중",
       "technology": "React · TypeScript · SVG",
-      "summary": "발사각을 바꾸어 궤적과 비행거리를 비교하고, 수업 미션별 익명 통계 데모를 확인하는 디지털 교구",
+      "summary": "발사 조건·공기 저항·바람·행성 중력을 바꾸며 포물선 운동을 비교하는 디지털 교구",
       "entry": "projects/middle/science/포물선운동/projectile-lab-static/"
     }
   ]

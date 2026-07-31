@@ -1,96 +1,119 @@
-export type MissionId = "farthest" | "complementary" | "target";
-
 export type LaunchSettings = {
   angle: number;
   speed: number;
   gravity: number;
   startHeight: number;
+  wind: number;
+  airResistance: boolean;
+  drag: number;
 };
 
-export type Point = {
+export type FlightPoint = {
   x: number;
   y: number;
+  time: number;
+  vx: number;
+  vy: number;
+  ax: number;
+  ay: number;
+  speed: number;
 };
 
 export type Flight = {
   duration: number;
   distance: number;
   peakHeight: number;
-  trajectory: Point[];
+  trajectory: FlightPoint[];
+  settings: LaunchSettings;
+};
+
+export type GravityPreset = {
+  id: "moon" | "mars" | "earth" | "jupiter";
+  label: string;
+  gravity: number;
+};
+
+export const GRAVITY_PRESETS: GravityPreset[] = [
+  { id: "moon", label: "달", gravity: 1.62 },
+  { id: "mars", label: "화성", gravity: 3.71 },
+  { id: "earth", label: "지구", gravity: 9.81 },
+  { id: "jupiter", label: "목성", gravity: 24.79 },
+];
+
+export const DEFAULT_SETTINGS: LaunchSettings = {
+  angle: 45,
+  speed: 20,
+  gravity: 9.81,
+  startHeight: 1,
+  wind: 0,
+  airResistance: false,
+  drag: 0.045,
 };
 
 const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
 
-export const DEFAULT_SETTINGS: LaunchSettings = {
-  angle: 45,
-  speed: 18,
-  gravity: 9.8,
-  startHeight: 0,
-};
-
-export const TARGET_DISTANCE = 25;
-
 export const simulateFlight = (settings: LaunchSettings): Flight => {
   const radians = toRadians(settings.angle);
-  const horizontalSpeed = settings.speed * Math.cos(radians);
-  const verticalSpeed = settings.speed * Math.sin(radians);
-  const discriminant = verticalSpeed ** 2 + 2 * settings.gravity * settings.startHeight;
-  const duration = (verticalSpeed + Math.sqrt(discriminant)) / settings.gravity;
-  const distance = horizontalSpeed * duration;
-  const peakHeight =
-    settings.startHeight + verticalSpeed ** 2 / (2 * settings.gravity);
-  const samples = 96;
-  const trajectory = Array.from({ length: samples + 1 }, (_, index) => {
-    const time = (duration * index) / samples;
-    return {
-      x: horizontalSpeed * time,
-      y: Math.max(
-        0,
-        settings.startHeight + verticalSpeed * time - 0.5 * settings.gravity * time ** 2,
-      ),
-    };
-  });
+  const delta = 0.02;
+  const drag = settings.airResistance ? settings.drag : 0;
+  const trajectory: FlightPoint[] = [];
+  let x = 0;
+  let y = settings.startHeight;
+  let vx = settings.speed * Math.cos(radians);
+  let vy = settings.speed * Math.sin(radians);
+  let time = 0;
+  let peakHeight = y;
 
-  return { duration, distance, peakHeight, trajectory };
+  for (let step = 0; step < 1_500; step += 1) {
+    const relativeVx = vx - settings.wind;
+    const ax = -drag * relativeVx * Math.abs(relativeVx);
+    const ay = -settings.gravity - drag * vy * Math.abs(vy);
+    trajectory.push({ x, y: Math.max(0, y), time, vx, vy, ax, ay, speed: Math.hypot(vx, vy) });
+
+    const nextVx = vx + ax * delta;
+    const nextVy = vy + ay * delta;
+    const nextX = x + nextVx * delta;
+    const nextY = y + nextVy * delta;
+    peakHeight = Math.max(peakHeight, nextY);
+
+    if (nextY <= 0) {
+      const ratio = y <= 0 ? 0 : y / (y - nextY);
+      const groundVx = vx + (nextVx - vx) * ratio;
+      const groundVy = vy + (nextVy - vy) * ratio;
+      trajectory.push({
+        x: x + (nextX - x) * ratio,
+        y: 0,
+        time: time + delta * ratio,
+        vx: groundVx,
+        vy: groundVy,
+        ax,
+        ay,
+        speed: Math.hypot(groundVx, groundVy),
+      });
+      break;
+    }
+
+    x = nextX;
+    y = nextY;
+    vx = nextVx;
+    vy = nextVy;
+    time += delta;
+  }
+
+  const finalPoint = trajectory.at(-1) ?? trajectory[0];
+  return { duration: finalPoint.time, distance: finalPoint.x, peakHeight, trajectory, settings: { ...settings } };
 };
 
-export const positionAt = (flight: Flight, progress: number): Point => {
-  const index = Math.min(
-    flight.trajectory.length - 1,
-    Math.max(0, Math.round(progress * (flight.trajectory.length - 1))),
-  );
+export const positionAt = (flight: Flight, progress: number): FlightPoint => {
+  const index = Math.min(flight.trajectory.length - 1, Math.max(0, Math.round(progress * (flight.trajectory.length - 1))));
   return flight.trajectory[index];
 };
 
-export const getMission = (mission: MissionId) => {
-  if (mission === "complementary") {
-    return {
-      number: 2,
-      title: "쌍을 이루는 각도",
-      prompt: "30°와 60°의 궤적은 어떻게 다르고, 도달 거리는 어떨까요?",
-      action: "30°와 60° 비교하기",
-    };
-  }
-
-  if (mission === "target") {
-    return {
-      number: 3,
-      title: "목표물 맞히기",
-      prompt: `${TARGET_DISTANCE} m 목표물에 가장 가깝게 착지해 보세요.`,
-      action: "목표물 도전 제출",
-    };
-  }
-
-  return {
-    number: 1,
-    title: "가장 먼 각도 찾기",
-    prompt: "같은 힘으로 공을 던질 때, 어떤 각도에서 가장 멀리 갈까요?",
-    action: "미션 1 제출",
-  };
-};
+export const buildAngleSweep = (settings: LaunchSettings) =>
+  Array.from({ length: 17 }, (_, index) => {
+    const angle = 5 + index * 5;
+    return { angle, distance: simulateFlight({ ...settings, angle }).distance };
+  });
 
 export const formatNumber = (value: number, digits = 1) =>
-  value.toLocaleString("ko-KR", {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-  });
+  value.toLocaleString("ko-KR", { minimumFractionDigits: digits, maximumFractionDigits: digits });
