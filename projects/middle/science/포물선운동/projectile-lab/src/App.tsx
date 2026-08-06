@@ -6,6 +6,7 @@ import ExperimentPlot, {
 import TrajectoryCanvas, {
   type RecordedFlight,
 } from "./components/TrajectoryCanvas";
+import { LAUNCH_HEIGHTS } from "./axisRanges";
 import {
   AIR_DENSITY_LEVELS,
   clampLevel,
@@ -72,6 +73,37 @@ function LevelControl({
   );
 }
 
+type HeightControlProps = {
+  height: number;
+  onChange: (height: number) => void;
+};
+
+function HeightControl({ height, onChange }: HeightControlProps) {
+  const selectedIndex = Math.max(0, LAUNCH_HEIGHTS.indexOf(height as typeof LAUNCH_HEIGHTS[number]));
+
+  return (
+    <label className="level-control">
+      <span className="level-control__heading">
+        <span>발사 높이</span>
+        <strong>{height} m</strong>
+      </span>
+      <input
+        type="range"
+        min="0"
+        max={LAUNCH_HEIGHTS.length - 1}
+        step="1"
+        value={selectedIndex}
+        aria-label="발사 높이"
+        aria-valuetext={`${height}미터`}
+        onChange={(event) => onChange(LAUNCH_HEIGHTS[Number(event.target.value)])}
+      />
+      <span className="level-control__ticks level-control__ticks--five" aria-hidden="true">
+        {LAUNCH_HEIGHTS.map((value) => <i key={value}>{value} m</i>)}
+      </span>
+    </label>
+  );
+}
+
 function downloadExperimentCsv(records: ExperimentRecord[]) {
   const header = [
     "실험시각", "발사각도_deg", "초기속력_mps", "발사높이_m",
@@ -120,8 +152,6 @@ export default function App() {
     flight: Flight;
     environment: EnvironmentLevels;
   } | null>(null);
-  const pendingAim = useRef<{ angle: number; speed: number } | null>(null);
-  const aimFrame = useRef<number | null>(null);
   const flight = useMemo(() => simulateFlight(settings), [settings]);
 
   useEffect(() => {
@@ -165,10 +195,6 @@ export default function App() {
     return () => cancelAnimationFrame(frame);
   }, [isRunning]);
 
-  useEffect(() => () => {
-    if (aimFrame.current !== null) cancelAnimationFrame(aimFrame.current);
-  }, []);
-
   const stopCurrentFlight = () => {
     setProgress(1);
     progressRef.current = 1;
@@ -178,16 +204,9 @@ export default function App() {
   };
 
   const updateAim = (angle: number, speed: number) => {
-    pendingAim.current = { angle, speed };
-    if (aimFrame.current !== null) return;
-    aimFrame.current = requestAnimationFrame(() => {
-      const next = pendingAim.current;
-      aimFrame.current = null;
-      if (!next) return;
-      setSettings((current) => ({ ...current, ...next }));
-      stopCurrentFlight();
-      setMessage("벡터가 바뀌었습니다. 화살표의 방향은 각도, 길이는 초기 속력입니다.");
-    });
+    setSettings((current) => ({ ...current, angle, speed }));
+    stopCurrentFlight();
+    setMessage("조준 중입니다. 포인터를 놓으면 이 벡터로 바로 발사합니다.");
   };
 
   const updateEnvironment = (key: EnvironmentKey, rawLevel: number) => {
@@ -204,6 +223,26 @@ export default function App() {
     setMessage("발사 높이가 바뀌었습니다. 다른 조건은 그대로 두고 결과를 비교해 보세요.");
   };
 
+  const startFlight = (nextFlight: Flight) => {
+    const id = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${experiments.length}`;
+    activeExperiment.current = {
+      id,
+      flight: nextFlight,
+      environment: { ...environment },
+    };
+    setProgress(0);
+    progressRef.current = 0;
+    animationStart.current = null;
+    setIsRunning(true);
+  };
+
+  const commitAimAndLaunch = (angle: number, speed: number) => {
+    const nextSettings = { ...settings, angle, speed };
+    setSettings(nextSettings);
+    startFlight(simulateFlight(nextSettings));
+    setMessage("벡터를 고정하고 바로 발사했습니다. 지나간 자리만 경로로 그립니다.");
+  };
+
   const launch = () => {
     if (isRunning) return;
     if (progress < 1 && activeExperiment.current) {
@@ -212,17 +251,7 @@ export default function App() {
       setMessage("멈춘 지점부터 실험을 계속합니다.");
       return;
     }
-
-    const id = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${experiments.length}`;
-    activeExperiment.current = {
-      id,
-      flight,
-      environment: { ...environment },
-    };
-    setProgress(0);
-    progressRef.current = 0;
-    animationStart.current = null;
-    setIsRunning(true);
+    startFlight(flight);
     setMessage("발사 중입니다. 착지하면 입력 조건과 결과가 자동 기록됩니다.");
   };
 
@@ -250,6 +279,7 @@ export default function App() {
 
   const currentPoint = flight.trajectory[Math.round((flight.trajectory.length - 1) * progress)];
   const dragActive = environment.drag > 0 && environment.airDensity > 0;
+  const isFlightActive = isRunning || (progress < 1 && activeExperiment.current !== null);
 
   const changeAxis = (axis: "x" | "y" | "z", key: ExperimentAxisKey) => {
     if (axis === "x") setXAxis(key);
@@ -278,7 +308,7 @@ export default function App() {
               <strong>{settings.angle}°</strong>
               <strong>{settings.speed.toFixed(1)} m/s</strong>
             </div>
-            <span className="canvas-instruction">발사점에서 클릭·터치한 뒤 드래그</span>
+            <span className="canvas-instruction">조준 후 놓으면 즉시 발사 · 높이는 오른쪽 슬라이더로 변경</span>
             <label className="vector-toggle">
               <input type="checkbox" checked={showVelocity} onChange={(event) => setShowVelocity(event.target.checked)} />
               속도 벡터
@@ -289,13 +319,15 @@ export default function App() {
               flight={flight}
               recordedFlights={recentTrajectories}
               progress={progress}
+              isFlightActive={isFlightActive}
               showVelocity={showVelocity}
               onAimChange={updateAim}
+              onAimCommit={commitAimAndLaunch}
             />
           </div>
           <div className="launch-bar">
-            <button className="launch-action" type="button" onClick={launch}>
-              {isRunning ? "비행 중…" : progress < 1 ? "계속하기" : "발사하기"}
+            <button className="launch-action" type="button" onClick={launch} disabled={isRunning}>
+              {isRunning ? "비행 중…" : progress < 1 ? "계속하기" : "현재 벡터로 발사"}
             </button>
             <button className="secondary-action" type="button" onClick={() => {
               setIsRunning(false);
@@ -313,13 +345,10 @@ export default function App() {
         <aside className="control-rail" aria-label="실험 조건과 현재 결과">
           <section className="condition-summary">
             <h2>실험 조건</h2>
-            <p>환경은 0–5 단계로, 발사 방향과 세기는 장면에서 직접 조절합니다.</p>
+            <p>발사 방향과 세기는 장면에서, 높이와 환경 조건은 슬라이더로 조절합니다.</p>
           </section>
 
-          <label className="height-control">
-            <span>발사 높이 <strong>{settings.startHeight.toFixed(1)} m</strong></span>
-            <input type="range" min="0" max="5" step="0.5" value={settings.startHeight} onChange={(event) => updateStartHeight(Number(event.target.value))} />
-          </label>
+          <HeightControl height={settings.startHeight} onChange={updateStartHeight} />
 
           <LevelControl label="중력 세기" level={environment.gravity} values={GRAVITY_LEVELS} unit="m/s²" onChange={(value) => updateEnvironment("gravity", value)} />
           <LevelControl label="바람 세기" level={environment.wind} values={WIND_LEVELS} unit="m/s" onChange={(value) => updateEnvironment("wind", value)} />

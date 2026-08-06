@@ -46,7 +46,7 @@ export const DEFAULT_SETTINGS: LaunchSettings = {
   angle: 45,
   speed: 20,
   gravity: 9.81,
-  startHeight: 1,
+  startHeight: 0,
   wind: 0,
   airResistance: false,
   drag: 0.045,

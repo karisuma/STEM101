@@ -94,7 +94,8 @@ button:disabled { cursor: not-allowed; opacity: 0.42; }
 .axis-title { fill: var(--ink); font-size: 16px; font-weight: 800; }
 .axis-line { stroke: #c8e0e8; stroke-width: 2; }
 .trajectory-current { fill: none; stroke: var(--secondary); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
-.trajectory-record { fill: none; stroke-width: 2.5; stroke-dasharray: 8 8; opacity: 0.46; }
+.trajectory-record { fill: none; stroke-width: 2.5; stroke-dasharray: 8 8; opacity: 0.34; }
+.trajectory-impact { fill: var(--primary); stroke: var(--secondary); stroke-width: 3; opacity: 0.72; }
 .projectile-ball { fill: var(--secondary); filter: drop-shadow(0 0 8px var(--secondary)); }
 .ground-text, .aim-instruction { fill: var(--muted); font-size: 12px; }
 .velocity-vector line, .wind-indicator line { stroke: var(--secondary); stroke-width: 3; }
@@ -125,10 +126,12 @@ button:disabled { cursor: not-allowed; opacity: 0.42; }
 .height-control > span, .level-control__heading, .level-control__readout { display: flex; justify-content: space-between; gap: 12px; }
 .height-control > span, .level-control__heading { color: #c3d6df; font-size: 13px; font-weight: 700; }
 .height-control strong, .level-control__heading strong { color: var(--secondary); }
-.height-control input, .level-control input { width: 100%; min-height: 34px; margin-top: 8px; accent-color: var(--secondary); }
+.height-control p { margin: 8px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.level-control input { width: 100%; min-height: 34px; margin-top: 8px; accent-color: var(--secondary); }
 .level-control__readout { color: var(--muted); font-size: 11px; }
 .level-control__readout b { color: #d5e6ec; font-family: "SFMono-Regular", Consolas, monospace; font-weight: 500; }
 .level-control__ticks { display: grid; grid-template-columns: repeat(6, 1fr); margin-top: 5px; color: #6f8998; font-size: 10px; text-align: center; }
+.level-control__ticks--five { grid-template-columns: repeat(5, 1fr); }
 .level-control__ticks i { font-style: normal; }
 .level-control__ticks i:first-child { text-align: left; }
 .level-control__ticks i:last-child { text-align: right; }

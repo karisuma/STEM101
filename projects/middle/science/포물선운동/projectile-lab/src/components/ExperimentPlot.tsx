@@ -1,26 +1,15 @@
 import { useId, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import {
+  EXPERIMENT_AXIS_EXTENTS,
+  type AxisExtent,
+  type ExperimentAxisKey,
+} from "../axisRanges";
 import type { ExperimentRecord } from "../experiments";
 
 export type { ExperimentRecord } from "../experiments";
+export type { ExperimentAxisKey } from "../axisRanges";
 
 export type PlotMode = "2d" | "3d";
-
-export type ExperimentAxisKey =
-  | "angle"
-  | "speed"
-  | "startHeight"
-  | "gravityLevel"
-  | "gravity"
-  | "windLevel"
-  | "wind"
-  | "dragLevel"
-  | "drag"
-  | "airDensityLevel"
-  | "airDensity"
-  | "distance"
-  | "peakHeight"
-  | "duration"
-  | "impactSpeed";
 
 export type ExperimentPlotProps = {
   records: ExperimentRecord[];
@@ -41,7 +30,6 @@ type AxisDefinition = {
   digits: number;
 };
 
-type Extent = { min: number; max: number };
 type Point2D = { x: number; y: number };
 type Point3D = Point2D & { depth: number };
 
@@ -81,22 +69,10 @@ function valueOf(record: ExperimentRecord, key: ExperimentAxisKey) {
   return Number.isFinite(value) ? value : 0;
 }
 
-function extentOf(records: ExperimentRecord[], key: ExperimentAxisKey): Extent {
-  if (records.length === 0) return { min: 0, max: 1 };
-  const values = records.map((record) => valueOf(record, key));
-  const rawMin = Math.min(...values);
-  const rawMax = Math.max(...values);
-  if (rawMin === rawMax) {
-    const padding = Math.max(1, Math.abs(rawMin) * 0.1);
-    return { min: rawMin - padding, max: rawMax + padding };
-  }
-  const padding = (rawMax - rawMin) * 0.08;
-  return { min: rawMin - padding, max: rawMax + padding };
-}
-
-function normalize(value: number, extent: Extent) {
+function normalize(value: number, extent: AxisExtent) {
   const span = extent.max - extent.min;
-  return span === 0 ? 0.5 : (value - extent.min) / span;
+  if (span === 0) return 0.5;
+  return Math.max(0, Math.min(1, (value - extent.min) / span));
 }
 
 function formatValue(value: number, key: ExperimentAxisKey, withUnit = true) {
@@ -125,7 +101,7 @@ function formatCreatedAt(value: string) {
   }).format(date);
 }
 
-function ticksFor(extent: Extent) {
+function ticksFor(extent: AxisExtent) {
   return Array.from({ length: GRID_TICKS }, (_, index) => {
     const ratio = index / (GRID_TICKS - 1);
     return { ratio, value: extent.min + (extent.max - extent.min) * ratio };
@@ -245,9 +221,9 @@ export default function ExperimentPlot({
   }, [records]);
 
   const selectedRecord = records.find((record) => record.id === selectedId) ?? latestRecord;
-  const xExtent = useMemo(() => extentOf(records, xAxis), [records, xAxis]);
-  const yExtent = useMemo(() => extentOf(records, yAxis), [records, yAxis]);
-  const zExtent = useMemo(() => extentOf(records, zAxis), [records, zAxis]);
+  const xExtent = EXPERIMENT_AXIS_EXTENTS[xAxis];
+  const yExtent = EXPERIMENT_AXIS_EXTENTS[yAxis];
+  const zExtent = EXPERIMENT_AXIS_EXTENTS[zAxis];
   const correlation = useMemo(
     () => correlationOf(records, xAxis, yAxis),
     [records, xAxis, yAxis],
@@ -304,7 +280,7 @@ export default function ExperimentPlot({
     const dx = event.clientX - drag.current.clientX;
     const dy = event.clientY - drag.current.clientY;
     setRotation({
-      yaw: drag.current.yaw + dx * 0.009,
+      yaw: drag.current.yaw - dx * 0.009,
       pitch: Math.max(-1.15, Math.min(1.15, drag.current.pitch + dy * 0.009)),
     });
   };
@@ -434,7 +410,7 @@ export default function ExperimentPlot({
       <header className="experiment-plot__header">
         <div>
           <h2 id={`${idPrefix}-title`}>실험 기록 관계 그래프</h2>
-          <p>{mode === "2d" ? "두 값을 골라 점의 흐름과 예외를 비교하세요." : "세 값을 골라 공간을 드래그하며 군집과 경향을 살펴보세요."}</p>
+          <p>{mode === "2d" ? "축은 전체 실험 가능 범위에 고정됩니다. 점의 이동을 비교하세요." : "고정된 세 축에서 공간을 드래그하며 군집과 경향을 살펴보세요."}</p>
         </div>
         <div className="experiment-plot__mode" role="group" aria-label="그래프 차원">
           <button type="button" className={mode === "2d" ? "is-active" : ""} aria-pressed={mode === "2d"} onClick={() => onModeChange("2d")}>2차원</button>
