@@ -12,6 +12,10 @@
       "statusLabel": "완료",
       "technology": "React · TypeScript · Three.js",
       "summary": "태양·지구·달의 상대적인 움직임과 관측 지점의 낮밤 및 조석 변화를 확인하는 시뮬레이터",
+      "theme": {
+        "primary": "#071018",
+        "secondary": "#53D6DF"
+      },
       "entry": "projects/middle/science/조석시뮬레이션/tide-lab-static/"
     },
     {
@@ -24,7 +28,11 @@
       "status": "in-progress",
       "statusLabel": "MVP 구현 중",
       "technology": "React · TypeScript · SVG",
-      "summary": "발사 조건·공기 저항·바람·행성 중력을 바꾸며 포물선 운동을 비교하는 디지털 교구",
+      "summary": "발사 벡터와 환경 조건을 바꾸고, 반복 실험 데이터를 2D·3D 축에 배치해 관계를 탐색하는 시뮬레이션",
+      "theme": {
+        "primary": "#041526",
+        "secondary": "#73E9EF"
+      },
       "entry": "projects/middle/science/포물선운동/projectile-lab-static/"
     }
   ]

@@ -6,6 +6,7 @@ export type LaunchSettings = {
   wind: number;
   airResistance: boolean;
   drag: number;
+  airDensity: number;
 };
 
 export type FlightPoint = {
@@ -23,6 +24,7 @@ export type Flight = {
   duration: number;
   distance: number;
   peakHeight: number;
+  impactSpeed: number;
   trajectory: FlightPoint[];
   settings: LaunchSettings;
 };
@@ -48,6 +50,7 @@ export const DEFAULT_SETTINGS: LaunchSettings = {
   wind: 0,
   airResistance: false,
   drag: 0.045,
+  airDensity: 1.225,
 };
 
 const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
@@ -55,7 +58,8 @@ const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
 export const simulateFlight = (settings: LaunchSettings): Flight => {
   const radians = toRadians(settings.angle);
   const delta = 0.02;
-  const drag = settings.airResistance ? settings.drag : 0;
+  const densityRatio = settings.airDensity / 1.225;
+  const drag = settings.airResistance ? settings.drag * densityRatio : 0;
   const trajectory: FlightPoint[] = [];
   let x = 0;
   let y = settings.startHeight;
@@ -64,7 +68,7 @@ export const simulateFlight = (settings: LaunchSettings): Flight => {
   let time = 0;
   let peakHeight = y;
 
-  for (let step = 0; step < 1_500; step += 1) {
+  for (let step = 0; step < 6_000; step += 1) {
     const relativeVx = vx - settings.wind;
     const ax = -drag * relativeVx * Math.abs(relativeVx);
     const ay = -settings.gravity - drag * vy * Math.abs(vy);
@@ -101,7 +105,14 @@ export const simulateFlight = (settings: LaunchSettings): Flight => {
   }
 
   const finalPoint = trajectory.at(-1) ?? trajectory[0];
-  return { duration: finalPoint.time, distance: finalPoint.x, peakHeight, trajectory, settings: { ...settings } };
+  return {
+    duration: finalPoint.time,
+    distance: finalPoint.x,
+    peakHeight,
+    impactSpeed: finalPoint.speed,
+    trajectory,
+    settings: { ...settings },
+  };
 };
 
 export const positionAt = (flight: Flight, progress: number): FlightPoint => {
