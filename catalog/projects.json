@@ -258,6 +258,20 @@
       "summary": "위도·날짜·자전축 기울기와 거리 효과를 분리해 태양고도·낮 길이·일사량을 검증하는 실험실",
       "theme": { "primary": "#1C2133", "secondary": "#FFBF69" },
       "entry": "projects/middle/science/계절태양고도실험실/"
+    },
+    {
+      "id": "cosmic-scale-lab",
+      "title": "우주 규모·비유 검증 실험실",
+      "level": "middle-high",
+      "gradeLabel": "중학교 · 고등학교",
+      "subject": "science",
+      "subjectLabel": "과학 · 지구과학 · 수학",
+      "status": "complete",
+      "statusLabel": "수업용 구현 완료",
+      "technology": "ES Modules · Canvas · SVG",
+      "summary": "축구공 태양부터 가까운 별까지 크기·거리·빛 시간을 동일 축척으로 줄이고, 보기 렌즈와 학급 예측 분포로 비유를 검증하는 실험실",
+      "theme": { "primary": "#0B1020", "secondary": "#FF6B5E" },
+      "entry": "projects/middle/science/우주규모비교실험실/"
     }
   ]
 }

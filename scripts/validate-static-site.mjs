@@ -98,8 +98,8 @@ for (const subject of ["science", "math"]) {
   }
 }
 
-if (labDirectories.length !== 16) {
-  failures.push(`공통 실험실 project.json 수가 16개가 아니라 ${labDirectories.length}개입니다.`);
+if (labDirectories.length !== 17) {
+  failures.push(`공통 실험실 project.json 수가 17개가 아니라 ${labDirectories.length}개입니다.`);
 }
 
 if (failures.length) {

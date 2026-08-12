@@ -32,8 +32,9 @@
 | 화학반응·보존·속도 | `projects/middle/science/화학반응보존실험실/` | 반응물·온도·촉매·계 경계·활성화에너지 | N₂·H₂·촉매 자유 반응기 |
 | 유전·감수분열·표본 | `projects/middle/science/유전감수분열실험실/` | 부모 유전자형·유전양식·표본수·시드, 표본오차 | AA·Aa·aa 부모→자손 가계도 |
 | 계절·태양고도·일조 | `projects/middle/science/계절태양고도실험실/` | 날짜·위도·축기울기·이심률·반사율, 고도·낮 길이 | — |
+| 우주 규모·비유 검증 | `projects/middle/science/우주규모비교실험실/` | 지름/거리 기준·생활 기준물·보기 렌즈, 동일 축척·로그 거리·빛 시간 | 자유 축척·관점·기준물 조합 |
 
-조석 기준 실험실은 `projects/middle/science/조석시뮬레이션/`, 기존 자유 포물선 실험은 `projects/middle/science/포물선운동/`에 보존한다. 공개 카탈로그는 두 기존 실험과 위 16개를 합한 18개 항목이다.
+조석 기준 실험실은 `projects/middle/science/조석시뮬레이션/`, 기존 자유 포물선 실험은 `projects/middle/science/포물선운동/`에 보존한다. 공개 카탈로그는 두 기존 실험과 위 17개를 합한 19개 항목이다.
 
 ## 학급·라이선스 구현
 
@@ -48,6 +49,7 @@
 
 ```text
 node scripts/validate-catalog.mjs
+node scripts/test-cosmic-scale-lab.mjs
 node scripts/validate-lab-models.mjs
 node --no-warnings scripts/test-classroom-server.mjs
 ```

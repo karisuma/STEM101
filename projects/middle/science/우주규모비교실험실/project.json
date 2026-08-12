@@ -1,0 +1,12 @@
+{
+  "id": "cosmic-scale-lab",
+  "title": "우주 규모·비유 검증 실험실",
+  "level": ["middle", "high"],
+  "subject": "science",
+  "entry": "./index.html",
+  "technology": "ES Modules · Canvas · SVG",
+  "curriculum": ["태양계의 구조", "축척과 닮음", "지수와 로그", "천문 단위와 광년", "과학적 모형의 한계"],
+  "theme": { "primary": "#0B1020", "secondary": "#FF6B5E" },
+  "classroom": { "modes": ["student", "teacher"], "account": "non-identifying-seat-alias" },
+  "version": "2026.08.13-edu.1"
+}
