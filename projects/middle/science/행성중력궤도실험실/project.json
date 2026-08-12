@@ -1,0 +1,1 @@
+{"id":"gravity-orbit-lab","title":"행성 중력·궤도 실험실","level":["middle","high"],"subject":"science","entry":"./index.html","technology":"ES Modules · Canvas","curriculum":["만유인력","원운동","궤도 주기","중력 퍼텐셜과 탈출"],"theme":{"primary":"#0A1430","secondary":"#8FD3FF"},"classroom":{"modes":["student","teacher"],"account":"non-identifying-seat-alias"}}

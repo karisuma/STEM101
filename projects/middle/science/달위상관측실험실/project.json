@@ -1,0 +1,1 @@
+{"id":"moon-phase-lab","title":"달의 위상·관측 시각 실험실","level":["middle","high"],"subject":"science","entry":"./index.html","technology":"ES Modules · Canvas","curriculum":["달의 위상","월출 시각","달의 공전","일식과 월식"],"theme":{"primary":"#12172B","secondary":"#C2D7FF"},"classroom":{"modes":["student","teacher"],"account":"non-identifying-seat-alias"}}

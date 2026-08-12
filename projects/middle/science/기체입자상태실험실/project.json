@@ -1,0 +1,1 @@
+{"id":"gas-particle-lab","title":"기체 입자·상태 실험실","level":["middle","high"],"subject":"science","entry":"./index.html","technology":"ES Modules · Canvas","curriculum":["기체 압력","이상기체 상태방정식","분자 운동","속력 분포"],"theme":{"primary":"#152035","secondary":"#B8A1FF"},"classroom":{"modes":["student","teacher"],"account":"non-identifying-seat-alias"}}

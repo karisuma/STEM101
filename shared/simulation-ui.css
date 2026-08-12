@@ -1,0 +1,294 @@
+/* STEM101 상세 시뮬레이션 공통 토큰과 골격
+   프로젝트는 --sim-color-primary, --sim-color-secondary 두 색만 교체한다. */
+
+html {
+  background: #05080b;
+}
+
+body {
+  min-width: 320px;
+  margin: 0;
+}
+
+.sim-shell {
+  color-scheme: dark;
+  --sim-color-primary: #071018;
+  --sim-color-secondary: #53d6df;
+  --sim-ink: #edf4f2;
+  --sim-muted: #9aabb0;
+  --sim-line: color-mix(in srgb, var(--sim-ink) 16%, transparent);
+  --sim-surface-0: color-mix(in srgb, var(--sim-color-primary) 88%, #000);
+  --sim-surface-1: color-mix(in srgb, var(--sim-color-primary) 78%, #fff 4%);
+  --sim-surface-2: color-mix(in srgb, var(--sim-color-primary) 70%, #fff 8%);
+  --sim-focus: var(--sim-color-secondary);
+  --sim-danger: #ff7557;
+  --sim-success: #76d39b;
+  --sim-warning: #f1c969;
+  --sim-font-ui: Pretendard, "Noto Sans KR", Inter, ui-sans-serif, system-ui, sans-serif;
+  --sim-font-data: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --sim-space-1: 4px;
+  --sim-space-2: 8px;
+  --sim-space-3: 12px;
+  --sim-space-4: 16px;
+  --sim-space-5: 24px;
+  --sim-space-6: 32px;
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background: var(--sim-surface-0);
+  color: var(--sim-ink);
+  font-family: var(--sim-font-ui);
+  font-size: 14px;
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
+}
+
+.sim-shell *,
+.sim-shell *::before,
+.sim-shell *::after {
+  box-sizing: border-box;
+}
+
+.sim-shell button,
+.sim-shell input,
+.sim-shell select {
+  font: inherit;
+}
+
+.sim-shell button,
+.sim-shell select,
+.sim-shell input[type="range"] {
+  cursor: pointer;
+}
+
+.sim-shell :focus-visible {
+  outline: 2px solid var(--sim-focus);
+  outline-offset: 3px;
+}
+
+.sim-header {
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  gap: var(--sim-space-5);
+  padding: 0 var(--sim-space-6);
+  border-bottom: 1px solid var(--sim-line);
+}
+
+.sim-header h1 {
+  margin: 0;
+  font-size: clamp(20px, 2vw, 32px);
+  font-weight: 650;
+  letter-spacing: -0.035em;
+}
+
+.sim-header__status {
+  margin-left: auto;
+  color: var(--sim-muted);
+  font: 12px var(--sim-font-data);
+}
+
+.sim-toolbar,
+.sim-transport {
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  gap: var(--sim-space-2);
+  padding: var(--sim-space-2) var(--sim-space-4);
+  border-bottom: 1px solid var(--sim-line);
+  background: var(--sim-surface-1);
+}
+
+.sim-toolbar button,
+.sim-transport button,
+.sim-controls button {
+  min-height: 44px;
+  border: 1px solid var(--sim-line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--sim-muted);
+  padding: 0 var(--sim-space-4);
+  white-space: nowrap;
+}
+
+.sim-toolbar button[aria-pressed="true"],
+.sim-toolbar button[aria-selected="true"],
+.sim-controls button[aria-pressed="true"] {
+  border-color: var(--sim-color-secondary);
+  background: color-mix(in srgb, var(--sim-color-secondary) 14%, transparent);
+  color: var(--sim-color-secondary);
+}
+
+.sim-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+  min-height: 680px;
+}
+
+.sim-stage-column {
+  min-width: 0;
+  border-right: 1px solid var(--sim-line);
+}
+
+.sim-stage {
+  position: relative;
+  min-height: 560px;
+  overflow: hidden;
+  background: var(--sim-surface-0);
+}
+
+.sim-stage canvas,
+.sim-stage svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.sim-controls {
+  background: var(--sim-surface-1);
+}
+
+.sim-control-group,
+.sim-readout,
+.sim-note {
+  padding: var(--sim-space-5);
+  border-bottom: 1px solid var(--sim-line);
+}
+
+.sim-control-group h2,
+.sim-readout h2,
+.sim-evidence h2 {
+  margin: 0 0 var(--sim-space-4);
+  font-size: 16px;
+}
+
+.sim-field {
+  display: grid;
+  gap: var(--sim-space-2);
+  margin-top: var(--sim-space-4);
+  color: var(--sim-muted);
+  font-size: 13px;
+}
+
+.sim-field strong,
+.sim-readout__value {
+  color: var(--sim-color-secondary);
+  font-family: var(--sim-font-data);
+}
+
+.sim-field input,
+.sim-field select {
+  min-height: 44px;
+  border: 1px solid var(--sim-line);
+  border-radius: 0;
+  background: var(--sim-surface-0);
+  color: var(--sim-ink);
+}
+
+.sim-field input[type="range"] {
+  min-height: 44px;
+  accent-color: var(--sim-color-secondary);
+}
+
+.sim-transport {
+  border-top: 1px solid var(--sim-line);
+  border-bottom: 0;
+}
+
+.sim-transport input[type="range"] {
+  flex: 1;
+  min-width: 120px;
+  accent-color: var(--sim-color-secondary);
+}
+
+.sim-evidence {
+  padding: var(--sim-space-6);
+  border-top: 1px solid var(--sim-line);
+}
+
+.sim-note {
+  color: var(--sim-muted);
+  font-size: 13px;
+}
+
+.sim-overlay {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.sim-object-label {
+  color: var(--sim-ink);
+  font-size: 14px;
+  font-weight: 750;
+  text-shadow: 0 1px 4px var(--sim-surface-0);
+}
+
+.sim-minimap {
+  position: absolute;
+  z-index: 3;
+  right: var(--sim-space-4);
+  bottom: var(--sim-space-4);
+  width: min(420px, calc(100% - 32px));
+  min-height: 92px;
+  border: 1px solid var(--sim-line);
+  background: color-mix(in srgb, var(--sim-surface-0) 92%, transparent);
+}
+
+.sim-data {
+  font-family: var(--sim-font-data);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 900px) {
+  .sim-shell {
+    font-size: 15px;
+  }
+
+  .sim-header {
+    min-height: 64px;
+    gap: var(--sim-space-3);
+    padding: 0 var(--sim-space-4);
+  }
+
+  .sim-header h1 {
+    flex: 1;
+    font-size: 20px;
+  }
+
+  .sim-header__status {
+    font-size: 11px;
+  }
+
+  .sim-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .sim-stage-column {
+    border-right: 0;
+  }
+
+  .sim-stage {
+    min-height: min(62vh, 620px);
+  }
+
+  .sim-controls {
+    border-top: 1px solid var(--sim-line);
+  }
+
+  .sim-toolbar,
+  .sim-transport {
+    overflow-x: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sim-shell *,
+  .sim-shell *::before,
+  .sim-shell *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

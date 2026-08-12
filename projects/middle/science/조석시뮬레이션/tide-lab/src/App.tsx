@@ -90,6 +90,7 @@ export default function App() {
     moonEnabled: true,
     sunEnabled: true,
     moonPhase: 0,
+    displayMode: "concept",
   });
   const lastFrame = useRef<number | null>(null);
 
@@ -167,6 +168,13 @@ export default function App() {
   const phase =
     phaseOptions.find((option) => option.value === tideOptions.moonPhase) ??
     phaseOptions[0];
+  const isRelativeDisplay = tideOptions.displayMode === "relative";
+  const levelReadout = isRelativeDisplay
+    ? current.tide.toFixed(2)
+    : `${normalizedPercent(current.tide)}%`;
+  const levelTrackPercent = isRelativeDisplay
+    ? Math.min(100, Math.max(0, ((current.tide + 0.8) / 2.4) * 100))
+    : normalizedPercent(current.tide);
 
   const setPresetLocation = (name: string) => {
     const selected = LOCATIONS.find((item) => item.name === name);
@@ -373,59 +381,6 @@ export default function App() {
                       : "384,400 km · 지구 약 30개"}
                   </div>
                 )}
-                {(frameMode === "geo" ||
-                  scaleFocus === "overview" ||
-                  scaleFocus === "sizes") && (
-                  <div className="scene-overlay actual-scale-panel">
-                  <div>
-                    <small>태양 지름</small>
-                    <strong>139만 km</strong>
-                    <span>지구의 약 109배</span>
-                  </div>
-                  <div>
-                    <small>지구 지름</small>
-                    <strong>12,756 km</strong>
-                  </div>
-                  <div>
-                    <small>달 지름</small>
-                    <strong>3,475 km</strong>
-                    <span>지구의 약 1/4</span>
-                  </div>
-                  <div>
-                    <small>지구–달 평균 거리</small>
-                    <strong>384,400 km</strong>
-                    <span>지구 약 30개</span>
-                  </div>
-                  {frameMode === "helio" && (
-                    <div className="actual-size-visuals">
-                      <section>
-                        <h3>태양–지구 크기 비교</h3>
-                        <small>동일 축척 · 태양 지름 = 지구 109개</small>
-                        <div className="actual-solar-stage">
-                          <i className="actual-sun-disk" />
-                          <i className="actual-earth-pixel" />
-                        </div>
-                        <span>태양 1,392,700 km · 지구 12,756 km</span>
-                      </section>
-                      <section>
-                        <h3>지구–달 계 확대</h3>
-                        <small>동일 축척 · 중심 거리 = 지구 지름 약 30개</small>
-                        <div className="actual-earth-moon-stage">
-                          <i className="actual-em-earth" />
-                          <i className="actual-em-orbit" />
-                          <i className="actual-em-moon" />
-                        </div>
-                        <span>지구 12,756 km · 달 3,475 km</span>
-                      </section>
-                    </div>
-                  )}
-                  <p>
-                    전체 거리와 천체 크기를 동시에 맞추면 지구·달은
-                    1픽셀보다 작아집니다. 확대창은 각 창 안에서 동일한 실제
-                    비율을 유지합니다.
-                  </p>
-                  </div>
-                )}
               </>
             )}
           </div>
@@ -489,15 +444,17 @@ export default function App() {
             </div>
             <div className="water-level">
               <div>
-                <span>현재 상대 수위</span>
-                <strong>{normalizedPercent(current.tide)}%</strong>
+                <span>
+                  {isRelativeDisplay ? "달=1 기준 상대 수위" : "현재 상대 수위"}
+                </span>
+                <strong>{levelReadout}</strong>
               </div>
               <span className={`trend ${trend === "상승 중" ? "rising" : ""}`}>
                 {trend}
               </span>
             </div>
             <div className="level-track">
-              <i style={{ width: `${normalizedPercent(current.tide)}%` }} />
+              <i style={{ width: `${levelTrackPercent}%` }} />
             </div>
             <p>
               낮밤은 태양 방향으로, 상대 수위는 달과 태양의 조석
@@ -616,6 +573,41 @@ export default function App() {
               <span className="force-value">0.46</span>
             </div>
 
+            <div className="field">
+              <span>조석 표현 방식</span>
+              <div className="display-mode-grid" role="group" aria-label="조석 표현 방식">
+                <button
+                  className={tideOptions.displayMode === "concept" ? "active" : ""}
+                  onClick={() =>
+                    setTideOptions((currentOptions) => ({
+                      ...currentOptions,
+                      displayMode: "concept",
+                    }))
+                  }
+                >
+                  <span>개념 보기</span>
+                  <small>켜진 천체로 정규화</small>
+                </button>
+                <button
+                  className={tideOptions.displayMode === "relative" ? "active" : ""}
+                  onClick={() =>
+                    setTideOptions((currentOptions) => ({
+                      ...currentOptions,
+                      displayMode: "relative",
+                    }))
+                  }
+                >
+                  <span>상대 세기 보기</span>
+                  <small>달 = 1.00 고정</small>
+                </button>
+              </div>
+              <p className="display-mode-note" role="status">
+                {isRelativeDisplay
+                  ? "태양만 켜면 달만 켠 때보다 약 0.46배 높이로 표시됩니다."
+                  : "켜진 천체의 조석 팽대부 모양을 같은 크기로 비교합니다."}
+              </p>
+            </div>
+
             <div className="force-compare" aria-label="달과 태양의 힘 비교">
               <div className="force-compare-head">
                 <strong>중력 vs 조석력</strong>
@@ -723,7 +715,11 @@ export default function App() {
             </p>
           </div>
         </div>
-        <DayTimeline samples={samples} currentHour={hour} />
+        <DayTimeline
+          samples={samples}
+          currentHour={hour}
+          displayMode={tideOptions.displayMode}
+        />
         <div className="education-note">
           <span className="note-number">24h 50m</span>
           <p>

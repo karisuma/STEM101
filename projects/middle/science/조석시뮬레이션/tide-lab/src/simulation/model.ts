@@ -10,7 +10,10 @@ export type TideOptions = {
   moonEnabled: boolean;
   sunEnabled: boolean;
   moonPhase: number;
+  displayMode: TideDisplayMode;
 };
+
+export type TideDisplayMode = "concept" | "relative";
 
 export type Sample = {
   hour: number;
@@ -101,9 +104,14 @@ export const getTideLevel = (
   const sun = options.sunEnabled
     ? SUN_STRENGTH * legendreP2(dot(observer, sunDirection))
     : 0;
-  const scale =
+  const activeStrength =
     (options.moonEnabled ? MOON_STRENGTH : 0) +
     (options.sunEnabled ? SUN_STRENGTH : 0);
+  // 개념 보기는 켜진 천체만으로 정규화해 모양을 읽기 쉽게 한다.
+  // 상대 세기 보기는 달=1.00을 고정 기준으로 삼아 태양만 켰을 때도
+  // 조석 팽대부가 달의 약 0.46배로 남도록 한다.
+  const scale =
+    options.displayMode === "relative" ? MOON_STRENGTH : activeStrength;
   return scale === 0 ? 0 : (moon + sun) / scale;
 };
 

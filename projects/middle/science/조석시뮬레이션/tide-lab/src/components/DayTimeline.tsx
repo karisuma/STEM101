@@ -3,11 +3,13 @@ import {
   formatHour,
   getExtrema,
   type Sample,
+  type TideDisplayMode,
 } from "../simulation/model";
 
 type DayTimelineProps = {
   samples: Sample[];
   currentHour: number;
+  displayMode: TideDisplayMode;
 };
 
 const WIDTH = 1000;
@@ -17,21 +19,20 @@ const RIGHT = 22;
 const TOP = 22;
 const BOTTOM = 42;
 const MAX_HOUR = 26;
-const MIN_TIDE = -0.58;
-const MAX_TIDE = 1.08;
-
 const xForHour = (hour: number) =>
   LEFT + (hour / MAX_HOUR) * (WIDTH - LEFT - RIGHT);
-
-const yForTide = (tide: number) =>
-  TOP +
-  ((MAX_TIDE - tide) / (MAX_TIDE - MIN_TIDE)) *
-    (HEIGHT - TOP - BOTTOM);
 
 export default function DayTimeline({
   samples,
   currentHour,
+  displayMode,
 }: DayTimelineProps) {
+  const [minTide, maxTide] =
+    displayMode === "relative" ? [-0.8, 1.6] : [-0.58, 1.08];
+  const yForTide = (tide: number) =>
+    TOP +
+    ((maxTide - tide) / (maxTide - minTide)) *
+      (HEIGHT - TOP - BOTTOM);
   const path = useMemo(
     () =>
       samples
@@ -59,7 +60,11 @@ export default function DayTimeline({
       <svg
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         role="img"
-        aria-label="24시간 상대 조석 수위와 낮밤 변화 그래프"
+        aria-label={
+          displayMode === "relative"
+            ? "달을 1로 둔 24시간 상대 조석 수위와 낮밤 변화 그래프"
+            : "24시간 상대 조석 수위와 낮밤 변화 그래프"
+        }
       >
         <rect
           x={LEFT}

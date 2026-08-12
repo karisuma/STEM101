@@ -38,7 +38,7 @@ function matchesFilters(project) {
     .toLocaleLowerCase("ko");
 
   return (
-    (filters.level === "all" || project.level === filters.level) &&
+    (filters.level === "all" || String(project.level).split("-").includes(filters.level)) &&
     (filters.subject === "all" || project.subject === filters.subject) &&
     (filters.status === "all" || project.status === filters.status) &&
     (!query || searchable.includes(query))
@@ -53,7 +53,7 @@ function renderProjects() {
   if (!visibleProjects.length) {
     const message = document.createElement("p");
     message.className = "message";
-    message.textContent = "조건에 맞는 프로젝트가 없습니다.";
+    message.textContent = "조건에 맞는 실험실이 없습니다.";
     rowsContainer.append(message);
     return;
   }
@@ -103,9 +103,9 @@ async function loadProjects() {
     updateStatistics();
     renderProjects();
   } catch (error) {
-    console.error("프로젝트 목록을 불러오지 못했습니다.", error);
+    console.error("실험실 목록을 불러오지 못했습니다.", error);
     rowsContainer.innerHTML =
-      '<p class="message">프로젝트 목록을 불러오지 못했습니다.</p>';
+      '<p class="message">실험실 목록을 불러오지 못했습니다.</p>';
     resultCount.textContent = "";
   }
 }

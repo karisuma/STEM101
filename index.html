@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="STEM101 프로젝트 목록">
-    <title>STEM101 | 프로젝트</title>
+    <meta name="description" content="중·고등학교 수업용 STEM101 정량 탐구 실험실 카탈로그">
+    <title>STEM101 | 수업용 실험실</title>
     <link rel="stylesheet" href="assets/portal.css">
     <script type="module" src="assets/portal.js"></script>
   </head>
@@ -13,6 +13,10 @@
 
     <header class="site-header">
       <a class="brand" href="./" aria-label="STEM101 홈">STEM<span>101</span></a>
+      <a
+        class="repository-link"
+        href="classroom/"
+      >수업 관리 콘솔</a>
       <a
         class="repository-link"
         href="https://github.com/karisuma/STEM101"
@@ -27,11 +31,12 @@
     </header>
 
     <main>
-      <h1>프로젝트</h1>
+      <h1>수업용 탐구 실험실</h1>
+      <p class="catalog-intro">예측하고, 변수를 조작하고, A/B 결과와 학급 표본으로 원리를 검증하는 중·고등 과학·수학 디지털 교구입니다.</p>
 
       <section class="statistics" aria-label="프로젝트 통계">
         <article>
-          <span>전체 프로젝트</span>
+          <span>전체 실험실</span>
           <strong id="stat-total">0</strong>
         </article>
         <article>
@@ -39,7 +44,7 @@
           <strong id="stat-complete">0</strong>
         </article>
         <article>
-          <span>제작 중</span>
+          <span>검수 중</span>
           <strong id="stat-progress">0</strong>
         </article>
         <article>
@@ -48,14 +53,14 @@
         </article>
       </section>
 
-      <section class="controls" aria-label="프로젝트 검색과 필터">
+      <section class="controls" aria-label="실험실 검색과 필터">
         <label class="search-control">
           <span class="visually-hidden">프로젝트 이름 검색</span>
           <svg aria-hidden="true" viewBox="0 0 24 24">
             <circle cx="10.5" cy="10.5" r="6.5"></circle>
             <path d="m15.5 15.5 5 5"></path>
           </svg>
-          <input id="project-search" type="search" placeholder="프로젝트 이름 검색">
+          <input id="project-search" type="search" placeholder="실험실·개념·과목 검색">
         </label>
 
         <fieldset data-filter-group="level">
@@ -64,6 +69,7 @@
             <button class="selected" type="button" data-value="all" aria-pressed="true">전체</button>
             <button type="button" data-value="elementary" aria-pressed="false">초등</button>
             <button type="button" data-value="middle" aria-pressed="false">중등</button>
+            <button type="button" data-value="high" aria-pressed="false">고등</button>
           </div>
         </fieldset>
 
@@ -88,13 +94,13 @@
 
       <section class="project-section" aria-labelledby="project-list-title">
         <div class="list-heading">
-          <h2 id="project-list-title">프로젝트 목록</h2>
+          <h2 id="project-list-title">실험실 목록</h2>
           <span id="result-count" aria-live="polite"></span>
         </div>
 
         <div class="project-table" id="project-list">
           <div class="table-header" aria-hidden="true">
-            <span>프로젝트</span>
+            <span>실험실</span>
             <span>학년</span>
             <span>과목</span>
             <span>상태</span>
@@ -102,7 +108,7 @@
             <span>열기</span>
           </div>
           <div id="project-rows">
-            <p class="message">프로젝트 목록을 불러오고 있습니다.</p>
+            <p class="message">실험실 목록을 불러오고 있습니다.</p>
           </div>
         </div>
       </section>
@@ -116,7 +122,7 @@
 
     <template id="project-template">
       <article class="project-row">
-        <div class="project-name" data-label="프로젝트">
+        <div class="project-name" data-label="실험실">
           <strong></strong>
           <small></small>
         </div>

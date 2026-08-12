@@ -1,0 +1,1 @@
+{"id":"motion-lab","title":"운동·벡터 궤적 실험실","level":["middle","high"],"subject":"science","entry":"./index.html","technology":"ES Modules · Canvas · SVG","curriculum":["운동의 표현","힘과 가속도","역학적 에너지","벡터 성분"],"theme":{"primary":"#131A2E","secondary":"#FF9E42"},"classroom":{"modes":["student","teacher"],"account":"non-identifying-seat-alias"}}

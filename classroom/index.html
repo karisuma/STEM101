@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="description" content="STEM101 비식별 수업 계정·좌석 라이선스 관리 콘솔">
+    <title>수업 관리 콘솔 · STEM101</title>
+    <link rel="stylesheet" href="./styles.css">
+    <script type="module" src="./app.js"></script>
+  </head>
+  <body>
+    <header class="console-header">
+      <a href="../" class="brand">STEM<span>101</span></a>
+      <div><strong>수업 관리 콘솔</strong><small>비식별 좌석 계정 전용</small></div>
+      <button type="button" data-logout hidden>로그아웃</button>
+    </header>
+
+    <main>
+      <section class="privacy-note" aria-label="비식별 원칙">
+        <strong>개인정보 입력 없음</strong>
+        <p>이 콘솔은 이름·이메일·전화번호를 묻지 않습니다. `학생1`, `1반-3` 같은 수업용 좌석 별칭만 생성합니다.</p>
+      </section>
+
+      <section class="panel login-panel" data-login>
+        <div class="section-heading"><span>AUTHENTICATION</span><h1>감독자 또는 시스템 관리자 로그인</h1></div>
+        <form data-login-form>
+          <label>학급 API 주소<input name="apiBase" type="url" value="http://localhost:8787" required></label>
+          <label>권한<select name="role"><option value="supervisor">감독자</option><option value="admin">시스템 관리자</option></select></label>
+          <label>발급 코드<input name="code" autocomplete="username" maxlength="32" required></label>
+          <label>암호<input name="password" type="password" autocomplete="current-password" required></label>
+          <button class="primary" type="submit">로그인</button>
+        </form>
+        <p class="status" data-login-status aria-live="polite"></p>
+      </section>
+
+      <section data-admin hidden>
+        <div class="page-heading"><div><span>SYSTEM ADMIN</span><h1>감독자 라이선스</h1></div><p>판매 단위별 코드·좌석 한도·만료일을 발급합니다.</p></div>
+        <div class="two-column">
+          <section class="panel">
+            <h2>새 감독자 발급</h2>
+            <form data-supervisor-form>
+              <label>감독자 코드<input name="code" maxlength="32" placeholder="school-lab-01" required></label>
+              <label>초기 암호<input name="password" type="password" minlength="10" autocomplete="new-password" required></label>
+              <label>허용 좌석 수<input name="seatLimit" type="number" min="1" max="5000" value="120" required></label>
+              <label>만료 시각(선택)<input name="expiresAt" type="datetime-local"></label>
+              <button class="primary" type="submit">라이선스 발급</button>
+            </form>
+          </section>
+          <section class="panel wide"><h2>발급 현황</h2><div class="data-list" data-supervisors></div></section>
+        </div>
+      </section>
+
+      <section data-supervisor hidden>
+        <div class="page-heading"><div><span>SUPERVISOR</span><h1>수업과 좌석 계정</h1></div><p data-license-summary></p></div>
+        <div class="license-meter"><span data-license-bar></span></div>
+        <div class="two-column">
+          <section class="panel">
+            <h2>새 수업 생성</h2>
+            <form data-class-form>
+              <label>수업 코드<input name="code" maxlength="32" placeholder="1학년-과학-03" required></label>
+              <label>좌석 접두어<input name="prefix" maxlength="18" value="학생" required></label>
+              <label>좌석 수<input name="seatCount" type="number" min="1" max="200" value="30" required></label>
+              <label>학생 링크의 기본 실험실<select name="labId" data-lab-select></select></label>
+              <button class="primary" type="submit">좌석 계정 생성</button>
+            </form>
+          </section>
+          <section class="panel wide"><h2>수업 목록</h2><div class="data-list" data-classes></div></section>
+        </div>
+        <section class="panel seat-delivery" data-delivery hidden>
+          <div class="section-heading"><span>ONE-TIME DELIVERY</span><h2>새 좌석 링크</h2></div>
+          <p>토큰 원문은 지금 한 번만 표시됩니다. 링크를 복사해 해당 수업 안에서만 배포하세요.</p>
+          <div class="seat-links" data-seat-links></div>
+          <button type="button" data-copy-all>모든 링크 복사</button>
+        </section>
+        <section class="panel class-settings" data-class-settings hidden>
+          <div class="section-heading"><span>TEACHER SETTINGS</span><h2><span data-settings-class></span> 수업 설정</h2></div>
+          <form data-settings-form>
+            <input type="hidden" name="classId">
+            <label>실험실<select name="labId" data-settings-lab></select></label>
+            <label>수업 미션<select name="mission" data-settings-mission></select></label>
+            <label>설명 깊이<select name="depth"><option value="M1">중등 · 직관</option><option value="M2">중등 · 정량</option><option value="H1">고등 · 기본</option><option value="H2">고등 · 심화</option></select></label>
+            <fieldset class="lock-fieldset"><legend>학생에게 잠글 변수</legend><div data-settings-locks></div></fieldset>
+            <button class="primary" type="submit">수업 설정 저장</button>
+          </form>
+        </section>
+      </section>
+
+      <p class="global-status" data-status aria-live="polite"></p>
+    </main>
+  </body>
+</html>

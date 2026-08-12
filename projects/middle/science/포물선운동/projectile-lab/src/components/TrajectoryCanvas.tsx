@@ -9,6 +9,7 @@ export type RecordedFlight = {
   color: string;
   flight: Flight;
   visible: boolean;
+  isLatest: boolean;
 };
 
 type Props = {
@@ -19,14 +20,28 @@ type Props = {
   showVelocity: boolean;
   onAimChange?: (angle: number, speed: number) => void;
   onAimCommit?: (angle: number, speed: number) => void;
+  onInspectModeChange?: (isInspecting: boolean) => void;
 };
 
 const WIDTH = 920;
 const HEIGHT = 560;
 const PADDING = { left: 64, right: 40, top: 42, bottom: 66 };
 const MAX_AIM_LENGTH = 224;
+const MAX_ZOOM = 5;
+const TRACKING_EDGE_RATIO = 0.95;
+const TOOLTIP_WIDTH = 304;
 const MIN_SPEED = LAUNCH_LIMITS.speed.min;
 const MAX_SPEED = LAUNCH_LIMITS.speed.max;
+
+const clientPointInSvg = (
+  svg: SVGSVGElement,
+  clientX: number,
+  clientY: number,
+) => {
+  const matrix = svg.getScreenCTM();
+  if (!matrix) return null;
+  return new DOMPoint(clientX, clientY).matrixTransform(matrix.inverse());
+};
 
 const pathFor = (
   points: FlightPoint[],
@@ -48,21 +63,32 @@ export default function TrajectoryCanvas({
   showVelocity,
   onAimChange,
   onAimCommit,
+  onInspectModeChange,
 }: Props) {
+  const stageRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const aimingPointer = useRef<number | null>(null);
   const aimDraft = useRef({ angle: flight.settings.angle, speed: flight.settings.speed });
   const visibleRecords = recordedFlights.filter((record) => record.visible);
   const maxDistance = TRAJECTORY_AXIS_EXTENTS.distance.max;
   const maxHeight = TRAJECTORY_AXIS_EXTENTS.height.max;
+  const [zoom, setZoom] = useState(1);
+  const isInspecting = zoom > 1.001;
+  const [activeImpactId, setActiveImpactId] = useState<string | null>(null);
   const chartWidth = WIDTH - PADDING.left - PADDING.right;
   const chartHeight = HEIGHT - PADDING.top - PADDING.bottom;
-  const xScale = chartWidth / maxDistance;
-  const yScale = chartHeight / maxHeight;
+  const viewportDistance = maxDistance / zoom;
+  const viewportHeight = maxHeight;
+  const xScale = chartWidth / viewportDistance;
+  const yScale = chartHeight / viewportHeight;
   const ball = positionAt(flight, progress);
   const [camera, setCamera] = useState({ x: 0, y: 0 });
   const wasFlightActive = useRef(false);
   const cameraResetTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    onInspectModeChange?.(isInspecting);
+  }, [isInspecting, onInspectModeChange]);
 
   useEffect(() => {
     if (isFlightActive) {
@@ -71,22 +97,23 @@ export default function TrajectoryCanvas({
         cameraResetTimer.current = null;
       }
       wasFlightActive.current = true;
-      const nextCamera = {
-        x: Math.max(0, ball.x - maxDistance * 0.72),
-        y: Math.max(0, ball.y - maxHeight * 0.7),
-      };
-      setCamera((current) =>
-        Math.abs(current.x - nextCamera.x) < 0.01 && Math.abs(current.y - nextCamera.y) < 0.01
+      setCamera((current) => {
+        const trackingBoundary = current.x + viewportDistance * TRACKING_EDGE_RATIO;
+        if (ball.x <= trackingBoundary) {
+          return current.y === 0 ? current : { x: current.x, y: 0 };
+        }
+        const nextX = Math.max(0, ball.x - viewportDistance * TRACKING_EDGE_RATIO);
+        return Math.abs(current.x - nextX) < 0.01 && current.y === 0
           ? current
-          : nextCamera,
-      );
+          : { x: nextX, y: 0 };
+      });
       return;
     }
 
     if (wasFlightActive.current) {
       wasFlightActive.current = false;
       setCamera({
-        x: Math.max(0, ball.x - maxDistance * 0.72),
+        x: Math.max(0, ball.x - viewportDistance * TRACKING_EDGE_RATIO),
         y: 0,
       });
       cameraResetTimer.current = window.setTimeout(() => {
@@ -94,7 +121,7 @@ export default function TrajectoryCanvas({
         cameraResetTimer.current = null;
       }, 2000);
     }
-  }, [ball.x, ball.y, isFlightActive, maxDistance, maxHeight]);
+  }, [ball.x, isFlightActive, viewportDistance]);
 
   useEffect(
     () => () => {
@@ -102,6 +129,53 @@ export default function TrajectoryCanvas({
     },
     [],
   );
+
+  const stopPendingCameraReset = () => {
+    if (cameraResetTimer.current === null) return;
+    window.clearTimeout(cameraResetTimer.current);
+    cameraResetTimer.current = null;
+    wasFlightActive.current = false;
+  };
+
+  useEffect(() => {
+    const stage = stageRef.current;
+    const svg = svgRef.current;
+    if (!stage || !svg) return;
+
+    const handleWheel = (event: globalThis.WheelEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (cameraResetTimer.current !== null) {
+        window.clearTimeout(cameraResetTimer.current);
+        cameraResetTimer.current = null;
+        wasFlightActive.current = false;
+      }
+      const pointer = clientPointInSvg(svg, event.clientX, event.clientY);
+      if (!pointer) return;
+      const ratioX = Math.max(0, Math.min(1, (pointer.x - PADDING.left) / chartWidth));
+      const worldX = camera.x + ratioX * viewportDistance;
+      const nextZoom = Math.max(1, Math.min(MAX_ZOOM, zoom * (event.deltaY < 0 ? 1.25 : 0.8)));
+      if (Math.abs(nextZoom - zoom) < 0.001) return;
+      const nextDistance = maxDistance / nextZoom;
+      setCamera({
+        x: Math.max(0, worldX - ratioX * nextDistance),
+        y: 0,
+      });
+      setZoom(nextZoom);
+      setActiveImpactId(null);
+    };
+
+    stage.addEventListener("wheel", handleWheel, { passive: false });
+    return () => stage.removeEventListener("wheel", handleWheel);
+  }, [camera.x, chartWidth, maxDistance, viewportDistance, zoom]);
+
+  const resetView = () => {
+    stopPendingCameraReset();
+    setZoom(1);
+    setCamera({ x: 0, y: 0 });
+    setActiveImpactId(null);
+  };
+
   const ballX = PADDING.left + (ball.x - camera.x) * xScale;
   const ballY = HEIGHT - PADDING.bottom - (ball.y - camera.y) * yScale;
   const visiblePoints = flight.trajectory.slice(0, Math.max(2, Math.round(progress * (flight.trajectory.length - 1)) + 1));
@@ -115,10 +189,11 @@ export default function TrajectoryCanvas({
   const aimY = originY - Math.sin(aimRadians) * aimLength;
 
   const updateAimFromPointer = (event: PointerEvent<SVGSVGElement>) => {
-    if (!onAimChange) return;
-    const bounds = event.currentTarget.getBoundingClientRect();
-    const pointerX = ((event.clientX - bounds.left) / bounds.width) * WIDTH;
-    const pointerY = ((event.clientY - bounds.top) / bounds.height) * HEIGHT;
+    if (isInspecting || !onAimChange) return;
+    const pointer = clientPointInSvg(event.currentTarget, event.clientX, event.clientY);
+    if (!pointer) return;
+    const pointerX = pointer.x;
+    const pointerY = pointer.y;
     const dx = Math.max(1, pointerX - originX);
     const dy = Math.min(-1, pointerY - originY);
     const distance = Math.min(MAX_AIM_LENGTH, Math.hypot(dx, dy));
@@ -130,18 +205,23 @@ export default function TrajectoryCanvas({
   };
 
   const handlePointerDown = (event: PointerEvent<SVGSVGElement>) => {
-    if (!onAimChange) return;
+    if (isInspecting || !onAimChange) return;
     aimingPointer.current = event.pointerId;
     event.currentTarget.setPointerCapture(event.pointerId);
     updateAimFromPointer(event);
   };
 
   const handlePointerMove = (event: PointerEvent<SVGSVGElement>) => {
+    if (isInspecting) return;
     if (aimingPointer.current !== event.pointerId) return;
     updateAimFromPointer(event);
   };
 
   const stopAiming = (event: PointerEvent<SVGSVGElement>) => {
+    if (isInspecting) {
+      aimingPointer.current = null;
+      return;
+    }
     if (aimingPointer.current !== event.pointerId) return;
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
@@ -156,7 +236,7 @@ export default function TrajectoryCanvas({
   };
 
   const handleAimKeys = (event: KeyboardEvent<SVGGElement>) => {
-    if (!onAimChange) return;
+    if (isInspecting || !onAimChange) return;
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       onAimCommit?.(flight.settings.angle, flight.settings.speed);
@@ -180,14 +260,20 @@ export default function TrajectoryCanvas({
   };
 
   return (
+    <div ref={stageRef} className="trajectory-stage">
     <svg
       ref={svgRef}
-      className="trajectory-canvas"
+      className={`trajectory-canvas${isInspecting ? " is-inspecting" : ""}`}
       data-camera-x={camera.x.toFixed(2)}
       data-camera-y={camera.y.toFixed(2)}
+      data-zoom={zoom.toFixed(2)}
+      data-ball-x={ball.x.toFixed(2)}
+      data-tracking-boundary={(camera.x + viewportDistance * TRACKING_EDGE_RATIO).toFixed(2)}
       viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
       role="img"
-      aria-label="발사체의 포물선 운동 그래프. 발사점에서 원하는 방향으로 드래그해 발사 벡터를 정합니다."
+      aria-label={isInspecting
+        ? "확대된 실험 기록 탐색 그래프. 중앙의 기본 축척으로 버튼을 눌러 발사 모드로 돌아갑니다."
+        : "발사체의 포물선 운동 그래프. 발사점에서 원하는 방향으로 드래그해 발사 벡터를 정합니다."}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={stopAiming}
@@ -195,32 +281,78 @@ export default function TrajectoryCanvas({
     >
       <defs>
         <pattern id="grid" width="56" height="56" patternUnits="userSpaceOnUse"><path d="M 56 0 L 0 0 0 56" fill="none" stroke="rgba(172, 224, 245, .16)" strokeWidth="1" /></pattern>
+        <clipPath id="trajectory-plot-clip"><rect x={PADDING.left} y={PADDING.top} width={chartWidth} height={chartHeight} /></clipPath>
         <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
         <marker id="aim-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#73e9ef" /></marker>
       </defs>
-      <rect width={WIDTH} height={HEIGHT} fill="url(#grid)" />
-      <rect x={0} y={groundY} width={WIDTH} height={Math.max(0, HEIGHT - groundY)} fill="#041323" />
+      <rect x={PADDING.left} y={PADDING.top} width={chartWidth} height={chartHeight} fill="url(#grid)" />
+      <rect x={PADDING.left} y={groundY} width={chartWidth} height={Math.max(0, HEIGHT - PADDING.bottom - groundY)} fill="#041323" clipPath="url(#trajectory-plot-clip)" />
       {Array.from({ length: 7 }, (_, index) => {
         const x = PADDING.left + (chartWidth * index) / 6;
-        return <g key={`x-${index}`}><line x1={x} x2={x} y1={PADDING.top} y2={HEIGHT - PADDING.bottom} stroke="rgba(172, 224, 245, .15)" strokeDasharray="4 7" /><text x={x} y={HEIGHT - 30} textAnchor="middle" className="axis-text">{(camera.x + (maxDistance * index) / 6).toFixed(0)}</text></g>;
+        return <g key={`x-${index}`}><line x1={x} x2={x} y1={PADDING.top} y2={HEIGHT - PADDING.bottom} stroke="rgba(172, 224, 245, .15)" strokeDasharray="4 7" /><text x={x} y={HEIGHT - 30} textAnchor="middle" className="axis-text">{(camera.x + (viewportDistance * index) / 6).toFixed(isInspecting ? 1 : 0)}</text></g>;
       })}
       {Array.from({ length: 5 }, (_, index) => {
         const y = HEIGHT - PADDING.bottom - (chartHeight * index) / 4;
-        return <g key={`y-${index}`}><line x1={PADDING.left} x2={WIDTH - PADDING.right} y1={y} y2={y} stroke="rgba(172, 224, 245, .15)" strokeDasharray="4 7" /><text x={46} y={y + 5} textAnchor="end" className="axis-text">{(camera.y + (maxHeight * index) / 4).toFixed(0)}</text></g>;
+        return <g key={`y-${index}`}><line x1={PADDING.left} x2={WIDTH - PADDING.right} y1={y} y2={y} stroke="rgba(172, 224, 245, .15)" strokeDasharray="4 7" /><text x={46} y={y + 5} textAnchor="end" className="axis-text">{((viewportHeight * index) / 4).toFixed(0)}</text></g>;
       })}
       <line x1={PADDING.left} y1={HEIGHT - PADDING.bottom} x2={WIDTH - PADDING.right + 12} y2={HEIGHT - PADDING.bottom} className="axis-line" />
       <line x1={PADDING.left} y1={HEIGHT - PADDING.bottom} x2={PADDING.left} y2={PADDING.top - 8} className="axis-line" />
-      <text x={WIDTH - PADDING.right + 18} y={HEIGHT - PADDING.bottom - 14} className="axis-title">x (m)</text>
+      <text x={WIDTH - PADDING.right - 8} y={HEIGHT - PADDING.bottom - 14} textAnchor="end" className="axis-title">x (m)</text>
       <text x={PADDING.left - 4} y={PADDING.top - 16} className="axis-title">y (m)</text>
       {visibleRecords.map((record) => {
         const impact = record.flight.trajectory.at(-1);
+        const impactX = impact ? PADDING.left + (impact.x - camera.x) * xScale : 0;
+        const tooltipX = Math.max(
+          PADDING.left + 8,
+          Math.min(WIDTH - PADDING.right - TOOLTIP_WIDTH, impactX - TOOLTIP_WIDTH / 2),
+        );
+        const tooltipY = Math.max(PADDING.top + 8, groundY - 132);
+        const settings = record.flight.settings;
+        const impactIsVisible = Boolean(impact)
+          && impactX >= PADDING.left
+          && impactX <= WIDTH - PADDING.right
+          && groundY >= PADDING.top
+          && groundY <= HEIGHT - PADDING.bottom;
         return <g key={record.id}>
-          <path d={pathFor(record.flight.trajectory, xScale, yScale, camera)} className="trajectory-record" style={{ stroke: record.color }} />
-          {impact ? <circle className="trajectory-impact" cx={PADDING.left + (impact.x - camera.x) * xScale} cy={groundY} r="7" /> : null}
+          <path
+            d={pathFor(record.flight.trajectory, xScale, yScale, camera)}
+            className={`trajectory-record${record.isLatest ? " trajectory-record--latest" : ""}`}
+            style={{ stroke: record.color }}
+            clipPath="url(#trajectory-plot-clip)"
+          />
+          {impact && impactIsVisible ? (
+            <g
+              className={`trajectory-impact-group${record.isLatest ? " is-latest" : ""}`}
+              role="button"
+              tabIndex={0}
+              aria-label={`${record.isLatest ? "가장 최근 실험" : "이전 실험"}, ${record.label}, 발사 높이 ${settings.startHeight.toFixed(1)}미터, 중력 ${settings.gravity.toFixed(2)}, 바람 ${settings.wind.toFixed(1)}, 공기 저항 ${settings.drag.toFixed(3)}, 공기 밀도 ${settings.airDensity.toFixed(3)}`}
+              onPointerDown={(event) => event.stopPropagation()}
+              onPointerEnter={() => setActiveImpactId(record.id)}
+              onPointerLeave={() => setActiveImpactId((current) => current === record.id ? null : current)}
+              onFocus={() => setActiveImpactId(record.id)}
+              onBlur={() => setActiveImpactId((current) => current === record.id ? null : current)}
+              onClick={() => setActiveImpactId((current) => current === record.id ? null : record.id)}
+            >
+              <circle className="trajectory-impact-hit" cx={impactX} cy={groundY} r="18" />
+              <circle className="trajectory-impact" cx={impactX} cy={groundY} r={record.isLatest ? 9 : 7} />
+              {activeImpactId === record.id ? (
+                <g className="trajectory-impact-tooltip" pointerEvents="none">
+                  <rect x={tooltipX} y={tooltipY} width={TOOLTIP_WIDTH} height="118" />
+                  <text x={tooltipX + 14} y={tooltipY + 22} className="trajectory-impact-tooltip__title">
+                    {record.isLatest ? "가장 최근 실험" : "이전 실험"} · {record.label}
+                  </text>
+                  <text x={tooltipX + 14} y={tooltipY + 46}>발사 높이 {settings.startHeight.toFixed(1)} m · 중력 {settings.gravity.toFixed(2)} m/s²</text>
+                  <text x={tooltipX + 14} y={tooltipY + 68}>바람 {settings.wind.toFixed(1)} m/s · 저항 {settings.drag.toFixed(3)}</text>
+                  <text x={tooltipX + 14} y={tooltipY + 90}>공기 밀도 {settings.airDensity.toFixed(3)} kg/m³</text>
+                  <text x={tooltipX + 14} y={tooltipY + 108}>거리 {record.flight.distance.toFixed(1)} m · 최고 {record.flight.peakHeight.toFixed(1)} m</text>
+                </g>
+              ) : null}
+            </g>
+          ) : null}
         </g>;
       })}
-      {isFlightActive ? <path d={pathFor(visiblePoints, xScale, yScale, camera)} className="trajectory-current" filter="url(#glow)" /> : null}
-      <g className="aim-guides" aria-hidden="true">
+      {isFlightActive ? <path d={pathFor(visiblePoints, xScale, yScale, camera)} className="trajectory-current" filter="url(#glow)" clipPath="url(#trajectory-plot-clip)" /> : null}
+      {!isInspecting ? <><g className="aim-guides" aria-hidden="true" clipPath="url(#trajectory-plot-clip)">
         {[8, 16, 24, 32].map((speed) => {
           const radius = (speed / MAX_SPEED) * MAX_AIM_LENGTH;
           return <path key={speed} d={`M ${originX + radius} ${originY} A ${radius} ${radius} 0 0 0 ${originX} ${originY - radius}`} />;
@@ -250,13 +382,19 @@ export default function TrajectoryCanvas({
           <circle cx="-14" cy="12" r="9" fill="#4b5563" />
         </g>
       </g>
-      {isFlightActive ? <>
+      <text x={originX + 4} y={groundY + 52} className="ground-text">발사 지점</text></> : null}
+      {isFlightActive ? <g clipPath="url(#trajectory-plot-clip)">
         <circle cx={ballX} cy={ballY} r="9" fill="#ffbd56" className="projectile-ball" />
         <circle cx={ballX} cy={ballY} r="3.5" fill="#fff3d2" />
-      </> : null}
-      {isFlightActive && showVelocity ? <g className="velocity-vector"><line x1={ballX} y1={ballY} x2={ballX + Math.max(-56, Math.min(56, ball.vx * 3.2))} y2={ballY - Math.max(-56, Math.min(56, ball.vy * 3.2))} /><text x={ballX + 14} y={ballY - 16}>속도 벡터</text></g> : null}
+      </g> : null}
+      {isFlightActive && showVelocity ? <g className="velocity-vector" clipPath="url(#trajectory-plot-clip)"><line x1={ballX} y1={ballY} x2={ballX + Math.max(-56, Math.min(56, ball.vx * 3.2))} y2={ballY - Math.max(-56, Math.min(56, ball.vy * 3.2))} /><text x={ballX + 14} y={ballY - 16}>속도 벡터</text></g> : null}
       {Math.abs(flight.settings.wind) > 0.1 && <g className="wind-indicator" transform={`translate(${WIDTH - 174} 48)`}><line x1={0} y1={0} x2={flight.settings.wind > 0 ? 62 : -62} y2={0} /><text x={flight.settings.wind > 0 ? 72 : -72} y={5} textAnchor={flight.settings.wind > 0 ? "start" : "end"}>바람 {Math.abs(flight.settings.wind).toFixed(1)} m/s</text></g>}
-      <text x={originX + 4} y={groundY + 52} className="ground-text">발사 지점</text>
     </svg>
+    {zoom > 1.001 ? (
+      <button className="trajectory-reset-view" type="button" onClick={resetView}>
+        기본 축척으로
+      </button>
+    ) : null}
+    </div>
   );
 }

@@ -138,6 +138,7 @@ export default function App() {
   const [progress, setProgress] = useState(1);
   const [isRunning, setIsRunning] = useState(false);
   const [showVelocity, setShowVelocity] = useState(true);
+  const [isInspectingTrajectory, setIsInspectingTrajectory] = useState(false);
   const [plotMode, setPlotMode] = useState<PlotMode>("2d");
   const [xAxis, setXAxis] = useState<ExperimentAxisKey>("angle");
   const [yAxis, setYAxis] = useState<ExperimentAxisKey>("distance");
@@ -237,6 +238,7 @@ export default function App() {
   };
 
   const commitAimAndLaunch = (angle: number, speed: number) => {
+    if (isInspectingTrajectory) return;
     const nextSettings = { ...settings, angle, speed };
     setSettings(nextSettings);
     startFlight(simulateFlight(nextSettings));
@@ -244,6 +246,10 @@ export default function App() {
   };
 
   const launch = () => {
+    if (isInspectingTrajectory) {
+      setMessage("확대된 기록을 살펴보는 중입니다. 기본 축척으로 돌아간 뒤 발사하세요.");
+      return;
+    }
     if (isRunning) return;
     if (progress < 1 && activeExperiment.current) {
       animationStart.current = null;
@@ -264,16 +270,18 @@ export default function App() {
 
   const recentTrajectories = useMemo<RecordedFlight[]>(() => {
     const recent = experiments.slice(-4);
+    const latestId = experiments.at(-1)?.id;
     const selected = experiments.find((record) => record.id === selectedExperimentId);
     const source = selected && !recent.some((record) => record.id === selected.id)
       ? [selected, ...recent.slice(-3)]
       : recent;
-    return source.map((record, index) => ({
+    return source.map((record) => ({
       id: record.id,
       label: `${record.angle}° · ${record.speed.toFixed(1)} m/s`,
-      color: index === source.length - 1 ? "#73e9ef" : "#91a8b6",
+      color: record.id === latestId ? "#73e9ef" : "#91a8b6",
       flight: simulateFlight(record.settings),
       visible: true,
+      isLatest: record.id === latestId,
     }));
   }, [experiments, selectedExperimentId]);
 
@@ -308,7 +316,9 @@ export default function App() {
               <strong>{settings.angle}°</strong>
               <strong>{settings.speed.toFixed(1)} m/s</strong>
             </div>
-            <span className="canvas-instruction">조준 후 놓으면 즉시 발사 · 높이는 오른쪽 슬라이더로 변경</span>
+            <span className="canvas-instruction">{isInspectingTrajectory
+              ? "기록 탐색 중 · 착지점에서 조건 확인 · 중앙 버튼으로 발사 모드 복귀"
+              : "조준 후 놓으면 즉시 발사 · 휠로 기록 확대 · 높이는 오른쪽 슬라이더"}</span>
             <label className="vector-toggle">
               <input type="checkbox" checked={showVelocity} onChange={(event) => setShowVelocity(event.target.checked)} />
               속도 벡터
@@ -323,11 +333,12 @@ export default function App() {
               showVelocity={showVelocity}
               onAimChange={updateAim}
               onAimCommit={commitAimAndLaunch}
+              onInspectModeChange={setIsInspectingTrajectory}
             />
           </div>
           <div className="launch-bar">
-            <button className="launch-action" type="button" onClick={launch} disabled={isRunning}>
-              {isRunning ? "비행 중…" : progress < 1 ? "계속하기" : "현재 벡터로 발사"}
+            <button className="launch-action" type="button" onClick={launch} disabled={isRunning || isInspectingTrajectory}>
+              {isInspectingTrajectory ? "기본 축척으로 돌아가세요" : isRunning ? "비행 중…" : progress < 1 ? "계속하기" : "현재 벡터로 발사"}
             </button>
             <button className="secondary-action" type="button" onClick={() => {
               setIsRunning(false);

@@ -90,5 +90,5 @@ export const EXPERIMENT_AXIS_EXTENTS: Record<ExperimentAxisKey, AxisExtent> = {
 
 export const TRAJECTORY_AXIS_EXTENTS = {
   distance: { min: 0, max: 150 },
-  height: { min: 0, max: 200 },
+  height: { min: 0, max: 80 },
 } as const;

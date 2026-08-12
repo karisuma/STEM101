@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>시뮬레이션 제목 | STEM101</title>
+    <link rel="stylesheet" href="../../shared/simulation-ui.css" />
+  </head>
+  <body>
+    <main
+      class="sim-shell"
+      data-stem-simulation
+      style="--sim-color-primary: #161d3a; --sim-color-secondary: #ff9f43"
+    >
+      <header class="sim-header">
+        <a href="../../index.html">STEM101</a>
+        <h1>시뮬레이션 제목</h1>
+        <span class="sim-header__status">일시정지</span>
+      </header>
+
+      <section class="sim-workspace" aria-label="시뮬레이션 작업 공간">
+        <div class="sim-stage-column">
+          <nav class="sim-toolbar" aria-label="관점과 표현 방식">
+            <button type="button" aria-pressed="true">기본 관점</button>
+            <button type="button" aria-pressed="false">비교 관점</button>
+            <button type="button" aria-pressed="false">실제 비율</button>
+          </nav>
+
+          <div class="sim-stage" aria-label="시뮬레이션 장면">
+            <!-- Canvas, SVG 또는 WebGL 장면 -->
+            <span class="sim-overlay sim-object-label" style="left: 48%; top: 42%">대상</span>
+          </div>
+
+          <div class="sim-transport" aria-label="재생과 시간 조절">
+            <button type="button" aria-label="재생">▶</button>
+            <output class="sim-data">00:00</output>
+            <input type="range" min="0" max="100" value="0" aria-label="시간" />
+            <button type="button">처음으로</button>
+          </div>
+        </div>
+
+        <aside class="sim-controls" aria-label="변수와 현재 결과">
+          <section class="sim-readout">
+            <h2>현재 결과</h2>
+            <output class="sim-readout__value">0.00 단위</output>
+          </section>
+
+          <section class="sim-control-group">
+            <h2>변수 조절</h2>
+            <label class="sim-field">
+              <span>변수 이름 <strong>50 단위</strong></span>
+              <input type="range" min="0" max="100" value="50" />
+            </label>
+          </section>
+
+          <p class="sim-note">표현에서 과장하거나 생략한 조건을 여기에 적습니다.</p>
+        </aside>
+      </section>
+
+      <section class="sim-evidence">
+        <h2>예상과 관찰 결과 비교</h2>
+        <!-- 그래프, 표, 궤적 또는 실행 기록 -->
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "id": "simulation-id",
+  "title": "시뮬레이션 제목",
+  "level": "middle",
+  "subject": "science",
+  "question": "어떤 값을 바꾸면 결과는 어떻게 달라질까?",
+  "stage": "idea",
+  "theme": {
+    "primary": "#161D3A",
+    "secondary": "#FF9F43"
+  },
+  "tests": [
+    "한 변수를 바꾸기 전 결과를 예상한다.",
+    "다른 조건을 고정하고 해당 변수만 바꾼다.",
+    "예상과 실행 결과가 같은지 수치나 그래프로 비교한다."
+  ]
+}

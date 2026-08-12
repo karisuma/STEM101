@@ -156,6 +156,7 @@ const vertexShader = `
   uniform vec3 uSunDirection;
   uniform float uMoonStrength;
   uniform float uSunStrength;
+  uniform float uDisplayScale;
   uniform float uExaggeration;
 
   varying float vTide;
@@ -167,7 +168,7 @@ const vertexShader = `
 
   void main() {
     vec3 sphereNormal = normalize(position);
-    float totalStrength = max(uMoonStrength + uSunStrength, 0.001);
+    float totalStrength = max(uDisplayScale, 0.001);
     float tide = (
       uMoonStrength * p2(dot(sphereNormal, normalize(uMoonDirection))) +
       uSunStrength * p2(dot(sphereNormal, normalize(uSunDirection)))
@@ -182,6 +183,7 @@ const vertexShader = `
 
 const fragmentShader = `
   uniform vec3 uSunDirection;
+  uniform float uDisplayScale;
   varying float vTide;
   varying vec3 vNormalWorld;
 
@@ -190,7 +192,8 @@ const fragmentShader = `
     float fresnel = pow(1.0 - abs(dot(normalize(vNormalWorld), vec3(0.0, 0.0, 1.0))), 2.0);
     vec3 lowColor = vec3(0.01, 0.18, 0.25);
     vec3 highColor = vec3(0.08, 0.86, 0.96);
-    float tideContrast = smoothstep(-0.35, 0.72, vTide);
+    float contrastTide = clamp(vTide / max(uDisplayScale, 0.001), -1.0, 1.0);
+    float tideContrast = smoothstep(-0.35, 0.72, contrastTide);
     vec3 color = mix(lowColor, highColor, tideContrast);
     color *= 0.46 + light * 0.54;
     color += fresnel * vec3(0.1, 0.48, 0.58);
@@ -216,6 +219,13 @@ function TideOcean({
       uSunDirection: { value: toVector3(sunDirection) },
       uMoonStrength: { value: tideOptions.moonEnabled ? 1 : 0 },
       uSunStrength: { value: tideOptions.sunEnabled ? 0.46 : 0 },
+      uDisplayScale: {
+        value:
+          tideOptions.displayMode === "relative"
+            ? 1
+            : (tideOptions.moonEnabled ? 1 : 0) +
+              (tideOptions.sunEnabled ? 0.46 : 0),
+      },
       uExaggeration: { value: exaggeration },
     }),
     [],
@@ -233,6 +243,11 @@ function TideOcean({
     material.current.uniforms.uSunStrength.value = tideOptions.sunEnabled
       ? 0.46
       : 0;
+    material.current.uniforms.uDisplayScale.value =
+      tideOptions.displayMode === "relative"
+        ? 1
+        : (tideOptions.moonEnabled ? 1 : 0) +
+          (tideOptions.sunEnabled ? 0.46 : 0);
     material.current.uniforms.uExaggeration.value = exaggeration;
   });
 
